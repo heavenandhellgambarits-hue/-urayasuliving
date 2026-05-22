@@ -56,9 +56,9 @@ body{background:linear-gradient(135deg,var(--p-bg1) 0%,var(--p-bg2) 100%);min-he
   background:rgba(255,255,255,.9);transition:border-color .2s,box-shadow .2s;width:100%;font-size:.9rem;color:#111827;}
 .form-input:focus,.form-select:focus{outline:none;border-color:var(--p1);box-shadow:0 0 0 3px var(--p-focus-ring);}
 .nav-item{padding:10px 14px;border-radius:10px;cursor:pointer;transition:all .2s;
-  display:flex;align-items:center;gap:10px;font-size:.875rem;font-weight:600;color:var(--p-sidebar-text);}
-.nav-item:hover{background:var(--p-sidebar-active-bg);color:#fff;}
-.nav-item.active{background:var(--p-sidebar-active-bg);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.18);}
+  display:flex;align-items:center;gap:10px;font-size:.875rem;font-weight:600;color:#1f2937;}
+.nav-item:hover{background:var(--p-nav-hover-bg);color:var(--p2);}
+.nav-item.active{background:var(--p1);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.15);}
 .sbadge{padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;white-space:nowrap;}
 .s-pending{background:#fff3cd;color:#856404;}
 .s-confirmed{background:#d1ecf1;color:#0c5460;}
@@ -115,9 +115,14 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
 .p-accent{color:var(--p2);font-weight:700;}
 .p-accent-link{color:var(--p2);font-weight:700;cursor:pointer;}
 .p-accent-link:hover{text-decoration:underline;opacity:.85;}
-/* サイドバー内のセクションラベル */
-.sidebar-section-label{font-size:.7rem;font-weight:700;color:rgba(255,255,255,.55);
+/* サイドバー内のセクションラベル（デスクトップ：グレー） */
+.sidebar-section-label{font-size:.7rem;font-weight:700;color:#6b7280;
   letter-spacing:.08em;text-transform:uppercase;padding:12px 14px 4px;}
+/* ドロワー（スマホ）内は暗背景なので白テキストに戻す */
+.drawer .nav-item{color:rgba(255,255,255,.85);}
+.drawer .nav-item:hover{background:var(--p-sidebar-active-bg);color:#fff;}
+.drawer .nav-item.active{background:var(--p-sidebar-active-bg);color:#fff;}
+.drawer .sidebar-section-label{color:rgba(255,255,255,.5);}
 /* モーダル内 */
 .modal-label{font-size:.78rem;font-weight:600;color:#1f2937;margin-bottom:4px;}
 /* カード内の補助テキスト */
