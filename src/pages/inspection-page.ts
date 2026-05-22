@@ -9,8 +9,22 @@ export function getInspectionPage(orderId: string): string {
 <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
+:root{
+  --ip1:#5d8464; --ip2:#3d6444; --ip3:#2a4a30;
+  --i-bg1:#f0f4f0; --i-bg2:#e4ece4;
+  --i-card-border:rgba(180,210,180,.4);
+  --i-input-border:#c8d8c0;
+  --i-title:#4a6b4e;
+  --i-line:#c8d9c0;
+  --i-header-bg:linear-gradient(135deg,#4a7a50,#2d5a34);
+  --i-prog-track:#ddeedd;
+  --i-prog-fill:linear-gradient(to right,#7ab87a,#4a8a50);
+  --i-item-border:#d4e4cc;
+  --i-mode-inactive-border:rgba(180,210,180,.5);
+  --i-focus-ring:rgba(122,158,126,.15);
+}
 body{
-  background:linear-gradient(135deg,#f0f4f0 0%,#e4ece4 100%);
+  background:linear-gradient(135deg,var(--i-bg1) 0%,var(--i-bg2) 100%);
   min-height:100vh;
   font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;
   touch-action:manipulation;
@@ -20,10 +34,10 @@ body{
   backdrop-filter:blur(8px);
   border-radius:14px;
   box-shadow:0 2px 16px rgba(80,110,80,.10),0 1px 4px rgba(0,0,0,.04);
-  border:1px solid rgba(180,210,180,.4);
+  border:1px solid var(--i-card-border);
 }
 .btn-p{
-  background:linear-gradient(135deg,#5d8464,#3d6444);
+  background:linear-gradient(135deg,var(--ip1),var(--ip2));
   color:#fff;border-radius:10px;
   padding:10px 20px;font-weight:700;transition:all .2s;
   border:none;cursor:pointer;font-size:.9rem;
@@ -38,20 +52,20 @@ body{
 }
 .btn-s:hover{filter:brightness(.97);transform:translateY(-1px);}
 .form-input{
-  border:1.5px solid #c8d8c0;border-radius:10px;padding:10px 14px;
+  border:1.5px solid var(--i-input-border);border-radius:10px;padding:10px 14px;
   background:rgba(255,255,255,.9);transition:border-color .2s,box-shadow .2s;
   width:100%;font-size:.95rem;
 }
-.form-input:focus{outline:none;border-color:#7a9e7e;box-shadow:0 0 0 3px rgba(122,158,126,.15);}
+.form-input:focus{outline:none;border-color:var(--ip1);box-shadow:0 0 0 3px var(--i-focus-ring);}
 .section-title{
-  font-size:1rem;font-weight:700;color:#4a6b4e;
+  font-size:1rem;font-weight:700;color:var(--i-title);
   display:flex;align-items:center;gap:8px;margin-bottom:14px;
 }
-.section-title::after{content:'';flex:1;height:1px;background:linear-gradient(to right,#c8d9c0,transparent);}
+.section-title::after{content:'';flex:1;height:1px;background:linear-gradient(to right,var(--i-line),transparent);}
 
 /* ヘッダー */
 .app-header{
-  background:linear-gradient(135deg,#4a7a50,#2d5a34);
+  background:var(--i-header-bg);
   color:#fff;
   box-shadow:0 2px 12px rgba(40,90,40,.25);
   position:sticky;top:0;z-index:40;
@@ -63,7 +77,7 @@ body{
   transition:all .2s;border:none;cursor:pointer;
 }
 .mode-btn.active-camera{
-  background:linear-gradient(135deg,#5d8464,#3d6444);color:#fff;
+  background:linear-gradient(135deg,var(--ip1),var(--ip2));color:#fff;
   box-shadow:0 2px 8px rgba(60,100,60,.25);
 }
 .mode-btn.active-hid{
@@ -72,13 +86,13 @@ body{
 }
 .mode-btn.inactive{
   background:rgba(255,255,255,.6);color:#6b7280;
-  border:1.5px solid rgba(180,210,180,.5);
+  border:1.5px solid var(--i-mode-inactive-border);
 }
 
 /* 発注明細アイテム */
 .item-row{
   display:flex;align-items:center;gap:.75rem;
-  padding:.65rem .8rem;border-radius:10px;border:1.5px solid #d4e4cc;
+  padding:.65rem .8rem;border-radius:10px;border:1.5px solid var(--i-item-border);
   margin-bottom:.5rem;background:rgba(255,255,255,.6);transition:all .2s;
 }
 .item-row.matched{
@@ -97,11 +111,11 @@ body{
 .history-row.ng{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);}
 
 /* プログレスバー */
-.progress-track{height:10px;background:#ddeedd;border-radius:999px;overflow:hidden;margin-top:10px;}
-.progress-fill{height:10px;background:linear-gradient(to right,#7ab87a,#4a8a50);border-radius:999px;transition:width .5s ease;}
+.progress-track{height:10px;background:var(--i-prog-track);border-radius:999px;overflow:hidden;margin-top:10px;}
+.progress-fill{height:10px;background:var(--i-prog-fill);border-radius:999px;transition:width .5s ease;}
 
 /* バッジ */
-.badge-done{background:linear-gradient(135deg,#7ab87a,#4a8a50);color:#fff;border-radius:999px;padding:2px 10px;font-size:.75rem;font-weight:700;}
+.badge-done{background:linear-gradient(135deg,var(--ip1),var(--ip2));color:#fff;border-radius:999px;padding:2px 10px;font-size:.75rem;font-weight:700;}
 .badge-pending{background:rgba(239,68,68,.1);color:#c05050;border:1px solid rgba(220,80,80,.3);border-radius:999px;padding:2px 10px;font-size:.75rem;font-weight:700;}
 
 /* HIDモード枠 */
@@ -124,7 +138,7 @@ body{
 
 /* 完了ボタン */
 .complete-btn-active{
-  background:linear-gradient(135deg,#4a8a50,#2d6434);
+  background:linear-gradient(135deg,var(--ip1),var(--ip2));
   color:#fff;width:100%;padding:18px;border-radius:14px;
   font-weight:700;font-size:1.1rem;border:none;cursor:pointer;
   box-shadow:0 4px 16px rgba(50,120,50,.3);transition:all .2s;
@@ -289,9 +303,41 @@ var html5QrCode = null;
 var currentMode = 'camera';
 var hidBuffer = '';
 
+// ============ カラーテーマ ============
+var THEMES_INSP = {
+  green:  {p1:'#5d8464',p2:'#3d6444',bg1:'#f0f4f0',bg2:'#e4ece4',cb:'rgba(180,210,180,.4)',ib:'#c8d8c0',tt:'#4a6b4e',ln:'#c8d9c0',hbg:'linear-gradient(135deg,#4a7a50,#2d5a34)',pt:'#ddeedd',ib2:'#d4e4cc',mib:'rgba(180,210,180,.5)',fr:'rgba(122,158,126,.15)'},
+  blue:   {p1:'#3a6bbf',p2:'#1e4d9e',bg1:'#f0f4fc',bg2:'#e4ecf8',cb:'rgba(160,190,230,.4)',ib:'#b8cce0',tt:'#1e3a6e',ln:'#b0c4e0',hbg:'linear-gradient(135deg,#1e4d9e,#0f3070)',pt:'#d8e8f8',ib2:'#c0d4e8',mib:'rgba(160,190,230,.5)',fr:'rgba(91,141,217,.15)'},
+  purple: {p1:'#6a52a8',p2:'#4e3888',bg1:'#f5f0fc',bg2:'#ece4f8',cb:'rgba(190,170,225,.4)',ib:'#c8b8e0',tt:'#3d2878',ln:'#c0b0e0',hbg:'linear-gradient(135deg,#4e3888,#361c6c)',pt:'#e0d8f0',ib2:'#d0c0e4',mib:'rgba(190,170,225,.5)',fr:'rgba(139,114,200,.15)'},
+  orange: {p1:'#c06820',p2:'#a05010',bg1:'#fef5ec',bg2:'#fde8d4',cb:'rgba(225,185,145,.4)',ib:'#e8c898',tt:'#7a3a10',ln:'#e0c090',hbg:'linear-gradient(135deg,#a05010,#803808)',pt:'#f8e8c8',ib2:'#e8d0a8',mib:'rgba(225,185,145,.5)',fr:'rgba(224,134,58,.15)'},
+  slate:  {p1:'#455a64',p2:'#2e3f46',bg1:'#f2f5f7',bg2:'#e6ebed',cb:'rgba(170,190,200,.4)',ib:'#b8ccd4',tt:'#2e3f46',ln:'#b0c4cc',hbg:'linear-gradient(135deg,#2e3f46,#1c2b30)',pt:'#dce8ee',ib2:'#c4d8e0',mib:'rgba(170,190,200,.5)',fr:'rgba(96,125,139,.15)'},
+  rose:   {p1:'#b85070',p2:'#943050',bg1:'#fdf4f6',bg2:'#f8e8ec',cb:'rgba(218,168,178,.4)',ib:'#e0b0c0',tt:'#7a2038',ln:'#e0b8c8',hbg:'linear-gradient(135deg,#943050,#701838)',pt:'#f5dde4',ib2:'#e8c0cc',mib:'rgba(218,168,178,.5)',fr:'rgba(212,116,138,.15)'}
+};
+function applyThemeInsp(preset) {
+  var t = THEMES_INSP[preset] || THEMES_INSP.green;
+  var r = document.documentElement.style;
+  r.setProperty('--ip1',                   t.p1);
+  r.setProperty('--ip2',                   t.p2);
+  r.setProperty('--i-bg1',                 t.bg1);
+  r.setProperty('--i-bg2',                 t.bg2);
+  r.setProperty('--i-card-border',         t.cb);
+  r.setProperty('--i-input-border',        t.ib);
+  r.setProperty('--i-title',               t.tt);
+  r.setProperty('--i-line',                t.ln);
+  r.setProperty('--i-header-bg',           t.hbg);
+  r.setProperty('--i-prog-track',          t.pt);
+  r.setProperty('--i-item-border',         t.ib2);
+  r.setProperty('--i-mode-inactive-border',t.mib);
+  r.setProperty('--i-focus-ring',          t.fr);
+  r.setProperty('--i-prog-fill',           'linear-gradient(to right,' + t.p1 + ',' + t.p2 + ')');
+}
+
 // ============ 初期化 ============
 async function init() {
   if (!adminToken) { window.location.href = '/admin'; return; }
+  try {
+    var sd = await (await fetch('/api/settings')).json();
+    applyThemeInsp(sd.settings.theme_preset || 'green');
+  } catch(e) {}
   await loadOrder();
   setMode('camera');
   setupHidInput();

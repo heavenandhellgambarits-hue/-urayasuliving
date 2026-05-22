@@ -8,11 +8,32 @@ export function getAdminPage(): string {
 <script src="https://cdn.tailwindcss.com"><\/script>
 <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
 <style>
-body{background:linear-gradient(135deg,#f0f4f0 0%,#e4ece4 100%);min-height:100vh;
+:root{
+  --p1:#5d8464; --p2:#3d6444; --p3:#2a4a30;
+  --p-bg1:#f0f4f0; --p-bg2:#e4ece4;
+  --p-card-border:rgba(180,210,180,.4);
+  --p-input-border:#c8d8c0;
+  --p-title:#3d6444;
+  --p-line:#b0d0b0;
+  --p-nav-hover-bg:rgba(93,132,100,.1);
+  --p-nav-hover-fg:#3d6444;
+  --p-tbl-bg1:#f0f7f0; --p-tbl-bg2:#e4f0e4;
+  --p-tbl-border:rgba(180,210,180,.2);
+  --p-hover-row:rgba(93,132,100,.04);
+  --p-focus-ring:rgba(93,132,100,.15);
+  --p-sidebar-bg:linear-gradient(180deg,#3d6444 0%,#2a4a30 100%);
+  --p-sidebar-logo-bg:rgba(255,255,255,.18);
+  --p-sidebar-text:rgba(255,255,255,.7);
+  --p-sidebar-active-bg:rgba(255,255,255,.18);
+  --p-loading-color:#5d8464;
+  --p-upload-border:#b0d0b0;
+  --p-toggle-on:#5d8464;
+}
+body{background:linear-gradient(135deg,var(--p-bg1) 0%,var(--p-bg2) 100%);min-height:100vh;
   font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;}
 .card{background:rgba(255,255,255,.88);backdrop-filter:blur(8px);border-radius:14px;
-  box-shadow:0 2px 16px rgba(80,110,80,.10),0 1px 4px rgba(0,0,0,.04);border:1px solid rgba(180,210,180,.4);}
-.btn-p{background:linear-gradient(135deg,#5d8464,#3d6444);color:#fff;border-radius:9px;
+  box-shadow:0 2px 16px rgba(80,110,80,.10),0 1px 4px rgba(0,0,0,.04);border:1px solid var(--p-card-border);}
+.btn-p{background:linear-gradient(135deg,var(--p1),var(--p2));color:#fff;border-radius:9px;
   padding:8px 18px;font-weight:700;transition:all .2s;border:none;cursor:pointer;font-size:.875rem;}
 .btn-p:hover{filter:brightness(1.08);transform:translateY(-1px);}
 .btn-p:disabled{opacity:.5;cursor:not-allowed;transform:none;}
@@ -28,13 +49,13 @@ body{background:linear-gradient(135deg,#f0f4f0 0%,#e4ece4 100%);min-height:100vh
 .btn-warn{background:linear-gradient(135deg,#f5a623,#e08000);color:#fff;border-radius:9px;
   padding:8px 18px;font-weight:700;transition:all .2s;border:none;cursor:pointer;font-size:.875rem;}
 .btn-warn:hover{filter:brightness(1.07);transform:translateY(-1px);}
-.form-input,.form-select{border:1.5px solid #c8d8c0;border-radius:9px;padding:8px 12px;
+.form-input,.form-select{border:1.5px solid var(--p-input-border);border-radius:9px;padding:8px 12px;
   background:rgba(255,255,255,.9);transition:border-color .2s,box-shadow .2s;width:100%;font-size:.9rem;}
-.form-input:focus,.form-select:focus{outline:none;border-color:#5d8464;box-shadow:0 0 0 3px rgba(93,132,100,.15);}
+.form-input:focus,.form-select:focus{outline:none;border-color:var(--p1);box-shadow:0 0 0 3px var(--p-focus-ring);}
 .nav-item{padding:10px 14px;border-radius:10px;cursor:pointer;transition:all .2s;
-  display:flex;align-items:center;gap:10px;font-size:.875rem;font-weight:600;color:#5a6860;}
-.nav-item:hover{background:rgba(93,132,100,.1);color:#3d6444;}
-.nav-item.active{background:linear-gradient(135deg,#5d8464,#3d6444);color:#fff;box-shadow:0 2px 8px rgba(60,100,70,.25);}
+  display:flex;align-items:center;gap:10px;font-size:.875rem;font-weight:600;color:var(--p-sidebar-text);}
+.nav-item:hover{background:var(--p-sidebar-active-bg);color:#fff;}
+.nav-item.active{background:var(--p-sidebar-active-bg);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.18);}
 .sbadge{padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;white-space:nowrap;}
 .s-pending{background:#fff3cd;color:#856404;}
 .s-confirmed{background:#d1ecf1;color:#0c5460;}
@@ -42,18 +63,18 @@ body{background:linear-gradient(135deg,#f0f4f0 0%,#e4ece4 100%);min-height:100vh
 .s-inspecting{background:#fce4ec;color:#8b174d;}
 .s-shipped{background:#d1e7dd;color:#0a3622;}
 .s-cancelled{background:#f8d7da;color:#842029;}
-th{padding:10px 12px;text-align:left;font-size:.75rem;font-weight:700;color:#4a6b4a;white-space:nowrap;}
-td{padding:9px 12px;font-size:.85rem;border-bottom:1px solid rgba(180,210,180,.2);}
-tr:hover td{background:rgba(93,132,100,.04);}
-.tbl-header{background:linear-gradient(135deg,#f0f7f0,#e4f0e4);}
+th{padding:10px 12px;text-align:left;font-size:.75rem;font-weight:700;color:var(--p-title);white-space:nowrap;}
+td{padding:9px 12px;font-size:.85rem;border-bottom:1px solid var(--p-tbl-border);}
+tr:hover td{background:var(--p-hover-row);}
+.tbl-header{background:linear-gradient(135deg,var(--p-tbl-bg1),var(--p-tbl-bg2));}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;
   display:flex;align-items:center;justify-content:center;padding:16px;}
 .modal-box{background:#fff;border-radius:16px;padding:28px;width:100%;
   box-shadow:0 20px 60px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto;}
-.sec-title{font-size:1rem;font-weight:700;color:#3d6444;display:flex;align-items:center;gap:8px;margin-bottom:16px;}
-.sec-title::after{content:'';flex:1;height:1px;background:linear-gradient(to right,#b0d0b0,transparent);}
+.sec-title{font-size:1rem;font-weight:700;color:var(--p-title);display:flex;align-items:center;gap:8px;margin-bottom:16px;}
+.sec-title::after{content:'';flex:1;height:1px;background:linear-gradient(to right,var(--p-line),transparent);}
 .loading{display:inline-block;width:16px;height:16px;border:2px solid #ccc;
-  border-top-color:#5d8464;border-radius:50%;animation:spin .7s linear infinite;}
+  border-top-color:var(--p-loading-color);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 .fade-in{animation:fadeIn .3s ease;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
@@ -61,26 +82,32 @@ tr:hover td{background:rgba(93,132,100,.04);}
   padding:2px 6px;border-radius:6px;margin-left:4px;}
 .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:150;display:none;}
 .drawer-overlay.open{display:block;}
-.drawer{position:fixed;top:0;left:0;bottom:0;width:260px;background:#fff;z-index:160;
+.drawer{position:fixed;top:0;left:0;bottom:0;width:260px;z-index:160;
+  background:var(--p-sidebar-bg);
   transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
   box-shadow:4px 0 20px rgba(0,0,0,.15);overflow-y:auto;}
 .drawer.open{transform:translateX(0);}
-.upload-zone{border:2px dashed #b0d0b0;border-radius:12px;padding:28px;text-align:center;
+.upload-zone{border:2px dashed var(--p-upload-border);border-radius:12px;padding:28px;text-align:center;
   cursor:pointer;transition:all .2s;background:rgba(240,250,240,.5);}
-.upload-zone:hover{border-color:#5d8464;background:rgba(93,132,100,.05);}
+.upload-zone:hover{border-color:var(--p1);background:rgba(0,0,0,.03);}
 .toggle-switch{position:relative;display:inline-block;width:44px;height:24px;}
 .toggle-switch input{opacity:0;width:0;height:0;}
 .toggle-slider{position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:24px;transition:.3s;}
 .toggle-slider:before{position:absolute;content:'';width:18px;height:18px;left:3px;bottom:3px;
   background:#fff;border-radius:50%;transition:.3s;}
-input:checked+.toggle-slider{background:#5d8464;}
+input:checked+.toggle-slider{background:var(--p-toggle-on);}
 input:checked+.toggle-slider:before{transform:translateX(20px);}
 .stat-card{background:rgba(255,255,255,.88);border-radius:14px;padding:20px 22px;
-  border:1px solid rgba(180,210,180,.4);box-shadow:0 2px 10px rgba(80,110,80,.08);
+  border:1px solid var(--p-card-border);box-shadow:0 2px 10px rgba(80,110,80,.08);
   cursor:pointer;transition:all .2s;}
 .stat-card:hover{transform:translateY(-2px);box-shadow:0 4px 18px rgba(80,110,80,.14);}
 .page-section{display:none;}
 .page-section.active{display:block;}
+/* テーマ選択スウォッチ */
+.theme-swatch{width:40px;height:40px;border-radius:10px;cursor:pointer;transition:all .2s;
+  border:3px solid transparent;flex-shrink:0;}
+.theme-swatch:hover{transform:scale(1.12);}
+.theme-swatch.selected{border-color:#fff;box-shadow:0 0 0 3px var(--p1),0 2px 8px rgba(0,0,0,.2);transform:scale(1.1);}
 @media(max-width:768px){.sidebar-desktop{display:none!important;}.header-page-name{display:block;}}
 @media(min-width:769px){.mobile-menu-btn{display:none!important;}.header-page-name{display:none;}}
 </style>
@@ -335,13 +362,9 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
               <input id="settingSiteName" type="text" class="form-input" placeholder="OrderFlow"></div>
             <div><label class="block text-sm font-semibold text-gray-600 mb-1">説明文</label>
               <input id="settingSiteDesc" type="text" class="form-input" placeholder="汎用発注システム"></div>
-            <div><label class="block text-sm font-semibold text-gray-600 mb-1">テーマカラー</label>
-              <div class="flex gap-3 items-center">
-                <input id="settingColor" type="color" class="w-12 h-10 rounded cursor-pointer border border-gray-300" value="#5d8464"
-                  oninput="document.getElementById('settingColorHex').value=this.value">
-                <input id="settingColorHex" type="text" class="form-input" style="width:120px" placeholder="#5d8464"
-                  oninput="syncColor(this)">
-              </div>
+            <div><label class="block text-sm font-semibold text-gray-600 mb-1">カラーテーマ</label>
+              <div id="themeSwatches" class="flex gap-3 flex-wrap mt-2"></div>
+              <p id="themeLabel" class="text-xs text-gray-400 mt-2"></p>
             </div>
           </div>
           <button onclick="saveSettings()" class="btn-p mt-5"><i class="fas fa-save mr-1"></i>設定を保存</button>
@@ -510,12 +533,59 @@ async function init() {
   else document.getElementById('loginPage').classList.remove('hidden');
 }
 
+// ============ カラーテーマ ============
+var THEMES_ADMIN = {
+  green:  {p1:'#5d8464',p2:'#3d6444',p3:'#2a4a30',bg1:'#f0f4f0',bg2:'#e4ece4',cb:'rgba(180,210,180,.4)',ib:'#c8d8c0',tt:'#3d6444',ln:'#b0d0b0',nhb:'rgba(93,132,100,.1)',nhf:'#3d6444',tb1:'#f0f7f0',tb2:'#e4f0e4',tbr:'rgba(180,210,180,.2)',hr:'rgba(93,132,100,.04)',fr:'rgba(93,132,100,.15)',sbg:'linear-gradient(180deg,#3d6444 0%,#2a4a30 100%)',sab:'rgba(255,255,255,.18)',lc:'#5d8464',ub:'#b0d0b0',ton:'#5d8464'},
+  blue:   {p1:'#3a6bbf',p2:'#1e4d9e',p3:'#0f3070',bg1:'#f0f4fc',bg2:'#e4ecf8',cb:'rgba(160,190,230,.4)',ib:'#b8cce0',tt:'#1e3a6e',ln:'#90b0d8',nhb:'rgba(58,107,191,.1)',nhf:'#1e4d9e',tb1:'#eef3fd',tb2:'#dde9fb',tbr:'rgba(160,190,230,.2)',hr:'rgba(58,107,191,.04)',fr:'rgba(91,141,217,.15)',sbg:'linear-gradient(180deg,#1e4d9e 0%,#0f3070 100%)',sab:'rgba(255,255,255,.18)',lc:'#3a6bbf',ub:'#90b0d8',ton:'#3a6bbf'},
+  purple: {p1:'#6a52a8',p2:'#4e3888',p3:'#361c6c',bg1:'#f5f0fc',bg2:'#ece4f8',cb:'rgba(190,170,225,.4)',ib:'#c8b8e0',tt:'#3d2878',ln:'#b098d0',nhb:'rgba(106,82,168,.1)',nhf:'#4e3888',tb1:'#f4f0fd',tb2:'#e8e0fb',tbr:'rgba(180,160,220,.2)',hr:'rgba(106,82,168,.04)',fr:'rgba(139,114,200,.15)',sbg:'linear-gradient(180deg,#4e3888 0%,#361c6c 100%)',sab:'rgba(255,255,255,.18)',lc:'#6a52a8',ub:'#b098d0',ton:'#6a52a8'},
+  orange: {p1:'#c06820',p2:'#a05010',p3:'#803808',bg1:'#fef5ec',bg2:'#fde8d4',cb:'rgba(225,185,145,.4)',ib:'#e8c898',tt:'#7a3a10',ln:'#d8a870',nhb:'rgba(192,104,32,.1)',nhf:'#a05010',tb1:'#fdf4e8',tb2:'#fbe8d0',tbr:'rgba(220,180,130,.2)',hr:'rgba(192,104,32,.04)',fr:'rgba(224,134,58,.15)',sbg:'linear-gradient(180deg,#a05010 0%,#803808 100%)',sab:'rgba(255,255,255,.18)',lc:'#c06820',ub:'#d8a870',ton:'#c06820'},
+  slate:  {p1:'#455a64',p2:'#2e3f46',p3:'#1c2b30',bg1:'#f2f5f7',bg2:'#e6ebed',cb:'rgba(170,190,200,.4)',ib:'#b8ccd4',tt:'#2e3f46',ln:'#98b4bc',nhb:'rgba(69,90,100,.1)',nhf:'#2e3f46',tb1:'#eef4f8',tb2:'#dce8ee',tbr:'rgba(160,190,205,.2)',hr:'rgba(69,90,100,.04)',fr:'rgba(96,125,139,.15)',sbg:'linear-gradient(180deg,#2e3f46 0%,#1c2b30 100%)',sab:'rgba(255,255,255,.18)',lc:'#455a64',ub:'#98b4bc',ton:'#455a64'},
+  rose:   {p1:'#b85070',p2:'#943050',p3:'#701838',bg1:'#fdf4f6',bg2:'#f8e8ec',cb:'rgba(218,168,178,.4)',ib:'#e0b0c0',tt:'#7a2038',ln:'#d898a8',nhb:'rgba(184,80,112,.1)',nhf:'#943050',tb1:'#fdf0f4',tb2:'#fae0e8',tbr:'rgba(220,170,185,.2)',hr:'rgba(184,80,112,.04)',fr:'rgba(212,116,138,.15)',sbg:'linear-gradient(180deg,#943050 0%,#701838 100%)',sab:'rgba(255,255,255,.18)',lc:'#b85070',ub:'#d898a8',ton:'#b85070'}
+};
+var THEME_NAMES = {green:'グリーン',blue:'ブルー',purple:'パープル',orange:'オレンジ',slate:'スレート',rose:'ローズ'};
+var currentTheme = 'green';
+
+function applyTheme(preset) {
+  var t = THEMES_ADMIN[preset] || THEMES_ADMIN.green;
+  currentTheme = preset || 'green';
+  var r = document.documentElement.style;
+  r.setProperty('--p1',                   t.p1);
+  r.setProperty('--p2',                   t.p2);
+  r.setProperty('--p3',                   t.p3);
+  r.setProperty('--p-bg1',                t.bg1);
+  r.setProperty('--p-bg2',                t.bg2);
+  r.setProperty('--p-card-border',        t.cb);
+  r.setProperty('--p-input-border',       t.ib);
+  r.setProperty('--p-title',              t.tt);
+  r.setProperty('--p-line',               t.ln);
+  r.setProperty('--p-nav-hover-bg',       t.nhb);
+  r.setProperty('--p-nav-hover-fg',       t.nhf);
+  r.setProperty('--p-tbl-bg1',            t.tb1);
+  r.setProperty('--p-tbl-bg2',            t.tb2);
+  r.setProperty('--p-tbl-border',         t.tbr);
+  r.setProperty('--p-hover-row',          t.hr);
+  r.setProperty('--p-focus-ring',         t.fr);
+  r.setProperty('--p-sidebar-bg',         t.sbg);
+  r.setProperty('--p-sidebar-active-bg',  t.sab);
+  r.setProperty('--p-loading-color',      t.lc);
+  r.setProperty('--p-upload-border',      t.ub);
+  r.setProperty('--p-toggle-on',          t.ton);
+  // ドロワー・ログインボタンのインラインスタイル更新
+  document.querySelectorAll('[data-theme-gradient]').forEach(function(el){
+    el.style.background = 'linear-gradient(135deg,' + t.p1 + ',' + t.p2 + ')';
+  });
+  document.querySelectorAll('[data-theme-sidebar]').forEach(function(el){
+    el.style.background = t.sbg;
+  });
+}
+
 async function loadPublicSettings() {
   try {
     var d = await (await fetch('/api/settings')).json();
     siteName = d.settings.site_name || 'OrderFlow';
     document.getElementById('loginSiteName').textContent = siteName;
     document.title = '管理者画面 | ' + siteName;
+    applyTheme(d.settings.theme_preset || 'green');
   } catch(e) {}
 }
 
@@ -920,24 +990,49 @@ async function sendTestEmail() {
 }
 
 // ============ システム設定 ============
+function buildThemeSwatches() {
+  var container = document.getElementById('themeSwatches');
+  if (!container) return;
+  var themeColors = {
+    green:'#5d8464', blue:'#3a6bbf', purple:'#6a52a8',
+    orange:'#c06820', slate:'#455a64', rose:'#b85070'
+  };
+  var swatchHtml = '';
+  Object.keys(themeColors).forEach(function(k) {
+    swatchHtml += '<div class="theme-swatch' + (k===currentTheme?' selected':'') + '"'
+      + ' style="background:linear-gradient(135deg,' + themeColors[k] + ',' + THEMES_ADMIN[k].p2 + ')"'
+      + ' data-theme="' + k + '"'
+      + ' title="' + THEME_NAMES[k] + '"></div>';
+  });
+  container.innerHTML = swatchHtml;
+  document.getElementById('themeLabel').textContent = THEME_NAMES[currentTheme] || '';
+  // イベント委譲でクリック処理（onclick属性不使用 → 引用符衝突回避）
+  container.onclick = function(e) {
+    var el = e.target.closest('[data-theme]');
+    if (el) { applyTheme(el.dataset.theme); buildThemeSwatches(); }
+  };
+}
 async function loadSettings() {
   var res=await apiFetch('/api/admin/settings'); var d=await res.json();
   var s=d.settings;
   document.getElementById('settingSiteName').value=s.site_name||'';
   document.getElementById('settingSiteDesc').value=s.site_description||'';
-  var c=s.primary_color||'#5d8464';
-  document.getElementById('settingColor').value=c;
-  document.getElementById('settingColorHex').value=c;
-}
-function syncColor(input) {
-  var val=input.value;
-  if(/^#[0-9a-fA-F]{6}$/.test(val)) document.getElementById('settingColor').value=val;
+  applyTheme(s.theme_preset || 'green');
+  buildThemeSwatches();
 }
 async function saveSettings() {
-  var body={site_name:document.getElementById('settingSiteName').value,site_description:document.getElementById('settingSiteDesc').value,primary_color:document.getElementById('settingColor').value};
+  var body={
+    site_name:document.getElementById('settingSiteName').value,
+    site_description:document.getElementById('settingSiteDesc').value,
+    theme_preset:currentTheme
+  };
   var res=await apiFetch('/api/admin/settings',{method:'PUT',body:JSON.stringify(body)});
-  if(res.ok){showToast('設定を保存しました');document.getElementById('sidebarSiteName').textContent=body.site_name;document.title='管理者画面 | '+body.site_name;}
-  else showToast('保存に失敗しました','error');
+  if(res.ok){
+    showToast('設定を保存しました');
+    document.getElementById('sidebarSiteName').textContent=body.site_name;
+    document.title='管理者画面 | '+body.site_name;
+    applyTheme(currentTheme);
+  } else showToast('保存に失敗しました','error');
 }
 async function changePassword() {
   var cur=document.getElementById('curPw').value, nw=document.getElementById('newPw').value, conf=document.getElementById('confirmPw').value;
