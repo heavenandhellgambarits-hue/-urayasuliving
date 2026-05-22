@@ -30,7 +30,8 @@ export function getAdminPage(): string {
   --p-toggle-on:#5d8464;
 }
 body{background:linear-gradient(135deg,var(--p-bg1) 0%,var(--p-bg2) 100%);min-height:100vh;
-  font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;}
+  font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;
+  color:#1f2937;}
 .card{background:rgba(255,255,255,.88);backdrop-filter:blur(8px);border-radius:14px;
   box-shadow:0 2px 16px rgba(80,110,80,.10),0 1px 4px rgba(0,0,0,.04);border:1px solid var(--p-card-border);}
 .btn-p{background:linear-gradient(135deg,var(--p1),var(--p2));color:#fff;border-radius:9px;
@@ -64,7 +65,7 @@ body{background:linear-gradient(135deg,var(--p-bg1) 0%,var(--p-bg2) 100%);min-he
 .s-shipped{background:#d1e7dd;color:#0a3622;}
 .s-cancelled{background:#f8d7da;color:#842029;}
 th{padding:10px 12px;text-align:left;font-size:.75rem;font-weight:700;color:var(--p-title);white-space:nowrap;}
-td{padding:9px 12px;font-size:.85rem;border-bottom:1px solid var(--p-tbl-border);}
+td{padding:9px 12px;font-size:.85rem;border-bottom:1px solid var(--p-tbl-border);color:#374151;font-weight:500;}
 tr:hover td{background:var(--p-hover-row);}
 .tbl-header{background:linear-gradient(135deg,var(--p-tbl-bg1),var(--p-tbl-bg2));}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;
@@ -108,6 +109,19 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
   border:3px solid transparent;flex-shrink:0;}
 .theme-swatch:hover{transform:scale(1.12);}
 .theme-swatch.selected{border-color:#fff;box-shadow:0 0 0 3px var(--p1),0 2px 8px rgba(0,0,0,.2);transform:scale(1.1);}
+/* アクセントカラーテキスト（テーマ連動） */
+.p-accent{color:var(--p2);font-weight:700;}
+.p-accent-link{color:var(--p2);font-weight:700;cursor:pointer;}
+.p-accent-link:hover{text-decoration:underline;opacity:.85;}
+/* サイドバー内のセクションラベル */
+.sidebar-section-label{font-size:.7rem;font-weight:700;color:rgba(255,255,255,.55);
+  letter-spacing:.08em;text-transform:uppercase;padding:12px 14px 4px;}
+/* モーダル内 */
+.modal-label{font-size:.78rem;font-weight:600;color:#374151;margin-bottom:4px;}
+/* カード内の補助テキスト */
+.meta-text{font-size:.78rem;color:#6b7280;}
+/* stat-card見出し */
+.stat-label{font-size:.75rem;font-weight:600;color:#4b5563;margin-bottom:4px;}
 @media(max-width:768px){.sidebar-desktop{display:none!important;}.header-page-name{display:block;}}
 @media(min-width:769px){.mobile-menu-btn{display:none!important;}.header-page-name{display:none;}}
 </style>
@@ -129,10 +143,10 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
   <nav class="p-3 space-y-1" id="drawerNav">
     <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')"><i class="fas fa-tachometer-alt w-4"></i>ダッシュボード</div>
     <div class="nav-item" data-page="orders" onclick="switchPage('orders')"><i class="fas fa-inbox w-4"></i>受注管理</div>
-    <div class="text-xs font-bold text-gray-400 px-4 pt-3 pb-1">マスタ管理</div>
+    <div class="sidebar-section-label">マスタ管理</div>
     <div class="nav-item" data-page="products" onclick="switchPage('products')"><i class="fas fa-box w-4"></i>商品マスタ</div>
     <div class="nav-item" data-page="stores" onclick="switchPage('stores')"><i class="fas fa-store w-4"></i>発注元マスタ</div>
-    <div class="text-xs font-bold text-gray-400 px-4 pt-3 pb-1">設定</div>
+    <div class="sidebar-section-label">設定</div>
     <div class="nav-item" data-page="notices" onclick="switchPage('notices')"><i class="fas fa-bell w-4"></i>お知らせ</div>
     <div class="nav-item" data-page="email" onclick="switchPage('email')"><i class="fas fa-envelope w-4"></i>メール設定</div>
     <div class="nav-item" data-page="settings" onclick="switchPage('settings')"><i class="fas fa-cog w-4"></i>システム設定</div>
@@ -166,7 +180,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
       <button onclick="doLogin()" id="loginBtn" class="btn-p w-full py-3"><i class="fas fa-sign-in-alt mr-2"></i>ログイン</button>
     </div>
     <p class="text-center mt-4 text-xs text-gray-400">
-      <a href="/" class="hover:underline text-green-600"><i class="fas fa-arrow-left mr-1"></i>発注画面へ戻る</a>
+      <a href="/" class="hover:underline p-accent-link"><i class="fas fa-arrow-left mr-1"></i>発注画面へ戻る</a>
     </p>
   </div>
 </div>
@@ -189,10 +203,10 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
     <nav class="space-y-1">
       <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')"><i class="fas fa-tachometer-alt w-4"></i>ダッシュボード</div>
       <div class="nav-item" data-page="orders" onclick="switchPage('orders')"><i class="fas fa-inbox w-4"></i>受注管理</div>
-      <p class="text-xs font-bold text-gray-400 px-3 pt-3 pb-1">マスタ管理</p>
+      <div class="sidebar-section-label">マスタ管理</div>
       <div class="nav-item" data-page="products" onclick="switchPage('products')"><i class="fas fa-box w-4"></i>商品マスタ</div>
       <div class="nav-item" data-page="stores" onclick="switchPage('stores')"><i class="fas fa-store w-4"></i>発注元マスタ</div>
-      <p class="text-xs font-bold text-gray-400 px-3 pt-3 pb-1">設定</p>
+      <div class="sidebar-section-label">設定</div>
       <div class="nav-item" data-page="notices" onclick="switchPage('notices')"><i class="fas fa-bell w-4"></i>お知らせ</div>
       <div class="nav-item" data-page="email" onclick="switchPage('email')"><i class="fas fa-envelope w-4"></i>メール設定</div>
       <div class="nav-item" data-page="settings" onclick="switchPage('settings')"><i class="fas fa-cog w-4"></i>システム設定</div>
@@ -211,27 +225,27 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
         <h1 id="pageTitle" class="text-lg font-bold text-gray-800 header-page-name">ダッシュボード</h1>
         <h1 id="pageTitleDesktop" class="text-lg font-bold text-gray-800 hidden md:block">ダッシュボード</h1>
       </div>
-      <span id="adminDisplayName" class="text-sm text-gray-500 font-semibold hidden sm:block"></span>
+      <span id="adminDisplayName" class="text-sm text-gray-700 font-semibold hidden sm:block"></span>
     </header>
 
     <!-- ダッシュボード -->
     <div id="page-dashboard" class="page-section active fade-in">
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div class="stat-card" onclick="switchPage('orders');filterOrderStatus('pending')">
-          <p class="text-xs text-gray-500 mb-1">未確認の発注</p>
-          <p id="statPending" class="text-3xl font-bold text-amber-500">-</p>
+          <p class="stat-label">未確認の発注</p>
+          <p id="statPending" class="text-3xl font-bold text-amber-600">-</p>
         </div>
         <div class="stat-card" onclick="switchPage('orders')">
-          <p class="text-xs text-gray-500 mb-1">対応中</p>
-          <p id="statPreparing" class="text-3xl font-bold" style="color:#5d8464">-</p>
+          <p class="stat-label">対応中</p>
+          <p id="statPreparing" class="text-3xl font-bold p-accent">-</p>
         </div>
         <div class="stat-card" onclick="switchPage('orders');filterOrderStatus('shipped')">
-          <p class="text-xs text-gray-500 mb-1">出荷完了（累計）</p>
-          <p id="statShipped" class="text-3xl font-bold text-blue-500">-</p>
+          <p class="stat-label">出荷完了（累計）</p>
+          <p id="statShipped" class="text-3xl font-bold text-blue-600">-</p>
         </div>
         <div class="stat-card" onclick="switchPage('products')">
-          <p class="text-xs text-gray-500 mb-1">登録商品数</p>
-          <p id="statProducts" class="text-3xl font-bold text-purple-500">-</p>
+          <p class="stat-label">登録商品数</p>
+          <p id="statProducts" class="text-3xl font-bold text-purple-600">-</p>
         </div>
       </div>
       <div class="card p-6">
@@ -299,7 +313,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
     <!-- 発注元マスタ -->
     <div id="page-stores" class="page-section fade-in">
       <div class="flex justify-between items-center mb-4">
-        <p class="text-sm text-gray-500">発注元（店舗/部署）の管理</p>
+        <p class="text-sm text-gray-600 font-medium">発注元（店舗/部署）の管理</p>
         <button onclick="openStoreModal()" class="btn-p"><i class="fas fa-plus mr-1"></i>発注元追加</button>
       </div>
       <div class="card overflow-hidden">
@@ -315,7 +329,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
     <!-- お知らせ管理 -->
     <div id="page-notices" class="page-section fade-in">
       <div class="flex justify-between items-center mb-4">
-        <p class="text-sm text-gray-500">発注者へのお知らせ管理</p>
+        <p class="text-sm text-gray-600 font-medium">発注者へのお知らせ管理</p>
         <button onclick="openNoticeModal()" class="btn-p"><i class="fas fa-plus mr-1"></i>お知らせ追加</button>
       </div>
       <div class="card overflow-hidden">
@@ -331,7 +345,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
     <!-- メール設定 -->
     <div id="page-email" class="page-section fade-in">
       <div class="card p-6" style="max-width:540px">
-        <div class="sec-title"><i class="fas fa-envelope text-green-600"></i> メール設定（Resend API）</div>
+        <div class="sec-title"><i class="fas fa-envelope p-accent"></i> メール設定（Resend API）</div>
         <div class="space-y-4">
           <div><label class="block text-sm font-semibold text-gray-600 mb-1">メイン通知先メールアドレス</label>
             <input id="mainEmail" type="email" class="form-input" placeholder="admin@example.com"></div>
@@ -342,7 +356,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
               <input id="resendApiKey" type="password" class="form-input pr-10" placeholder="re_xxxxx">
               <button type="button" onclick="togglePw('resendApiKey',this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><i class="fas fa-eye text-sm"></i></button>
             </div>
-            <p class="text-xs text-gray-400 mt-1"><a href="https://resend.com" target="_blank" class="text-green-600 hover:underline">resend.com</a> でAPIキーを取得してください</p>
+            <p class="text-xs text-gray-400 mt-1"><a href="https://resend.com" target="_blank" class="p-accent-link hover:underline">resend.com</a> でAPIキーを取得してください</p>
           </div>
         </div>
         <div class="flex gap-3 mt-6">
@@ -356,7 +370,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
     <div id="page-settings" class="page-section fade-in">
       <div class="grid gap-6" style="max-width:520px">
         <div class="card p-6">
-          <div class="sec-title"><i class="fas fa-cog text-green-600"></i> 一般設定</div>
+          <div class="sec-title"><i class="fas fa-cog p-accent"></i> 一般設定</div>
           <div class="space-y-4">
             <div><label class="block text-sm font-semibold text-gray-600 mb-1">システム名</label>
               <input id="settingSiteName" type="text" class="form-input" placeholder="OrderFlow"></div>
@@ -391,7 +405,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
 <div id="orderModal" class="modal-overlay hidden">
   <div class="modal-box" style="max-width:760px">
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-clipboard-list text-green-600"></i>発注詳細</h2>
+      <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-clipboard-list p-accent"></i>発注詳細</h2>
       <button onclick="closeModal('orderModal')" class="text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button>
     </div>
     <div id="orderModalContent"></div>
@@ -435,7 +449,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
 <div id="importModal" class="modal-overlay hidden">
   <div class="modal-box" style="max-width:580px">
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-file-import text-green-600"></i>商品CSV取込</h2>
+      <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-file-import p-accent"></i>商品CSV取込</h2>
       <button onclick="closeModal('importModal')" class="text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button>
     </div>
     <p class="text-sm text-gray-500 mb-2">1行目をヘッダーとして読み込みます。列名：<code class="bg-gray-100 px-1 rounded">category,brand,product_name,product_code,barcode,unit</code></p>
@@ -696,7 +710,7 @@ async function loadDashboard() {
     if (recent.length===0){ el.innerHTML='<p class="text-gray-400 text-sm py-4 text-center">未確認の発注はありません</p>'; return; }
     el.innerHTML = '<div class="space-y-2">' + recent.map(function(o){
       return '<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-green-50 transition-colors" onclick="goDashboardOrder('+o.id+')" style="cursor:pointer">'
-        + '<div><p class="font-bold text-sm" style="color:#3d6444">'+o.order_no+'</p>'
+        + '<div><p class="font-bold text-sm p-accent">'+o.order_no+'</p>'
         + '<p class="text-xs text-gray-500">'+o.store_name+(o.section_name?' / '+o.section_name:'')+'</p></div>'
         + '<span class="sbadge s-pending">未確認</span>'
         + '</div>';
@@ -721,7 +735,7 @@ async function loadOrders() {
   if (orders.length===0){ tbody.innerHTML='<tr><td colspan="7" class="text-center py-8 text-gray-400">発注はありません</td></tr>'; return; }
   tbody.innerHTML = orders.map(function(o){
     return '<tr>'
-      +'<td><span class="font-bold cursor-pointer hover:underline" style="color:#3d6444" onclick="showOrderDetail('+o.id+')">'+o.order_no+'</span></td>'
+      +'<td><span class="font-bold cursor-pointer hover:underline p-accent-link" onclick="showOrderDetail('+o.id+')">'+o.order_no+'</span></td>'
       +'<td>'+o.store_name+'<br><span class="text-xs text-gray-400">'+(o.section_name||'')+'</span></td>'
       +'<td>'+(o.orderer_name||'-')+'</td>'
       +'<td>'+(o.desired_delivery_date||'-')+'</td>'
@@ -731,7 +745,7 @@ async function loadOrders() {
       +'<select class="form-select text-xs py-1 px-2 w-auto" style="width:auto" onchange="updateStatus('+o.id+',this.value)">'
       +['pending','confirmed','preparing','inspecting','shipped','cancelled'].map(function(s){ return '<option value="'+s+'"'+(s===o.status?' selected':'')+'>'+statusLabel[s]+'</option>'; }).join('')
       +'</select>'
-      +'<button onclick="showOrderDetail('+o.id+')" class="text-green-600 hover:text-green-800 text-sm"><i class="fas fa-eye"></i></button>'
+      +'<button onclick="showOrderDetail('+o.id+')" class="p-accent-link text-sm"><i class="fas fa-eye"></i></button>'
       +'</td></tr>';
   }).join('');
 }
@@ -750,7 +764,7 @@ async function showOrderDetail(id) {
   document.getElementById('orderModalContent').innerHTML =
     '<div class="space-y-4">'
     +'<div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">'
-    +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">発注番号</p><p class="font-bold" style="color:#3d6444">'+order.order_no+'</p></div>'
+    +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">発注番号</p><p class="font-bold p-accent">'+order.order_no+'</p></div>'
     +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">ステータス</p>'
     +'<select class="form-select text-xs py-1 px-2" onchange="updateStatusAndClose('+order.id+',this.value)">'
     +['pending','confirmed','preparing','inspecting','shipped','cancelled'].map(function(s){ return '<option value="'+s+'"'+(s===order.status?' selected':'')+'>'+statusLabel[s]+'</option>'; }).join('')
@@ -762,14 +776,14 @@ async function showOrderDetail(id) {
     +(order.worker_name?'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">作業者</p><p>'+order.worker_name+'</p></div>':'')
     +'</div>'
     +(order.note?'<div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm"><p class="text-xs text-amber-600 mb-1 font-semibold">備考</p><p>'+order.note+'</p></div>':'')
-    +'<div class="sec-title mt-2"><i class="fas fa-list text-green-600"></i> 発注明細</div>'
+    +'<div class="sec-title mt-2"><i class="fas fa-list p-accent"></i> 発注明細</div>'
     +'<div class="overflow-x-auto"><table class="w-full text-sm"><thead class="tbl-header"><tr><th>商品名</th><th>ブランド</th><th>コード</th><th>バーコード</th><th>数量</th><th>検品</th></tr></thead><tbody>'
     +items.map(function(i){
       var matched = i.barcode && inspectedBarcodes.has(i.barcode);
       return '<tr><td>'+i.product_name+'</td><td class="text-gray-500">'+(i.brand||'-')+'</td>'
         +'<td class="text-xs text-gray-400 font-mono">'+(i.product_code||'-')+'</td>'
         +'<td class="text-xs text-gray-400 font-mono">'+(i.barcode||'-')+'</td>'
-        +'<td class="font-bold text-right" style="color:#3d6444">'+i.quantity+(i.unit||'')+'</td>'
+        +'<td class="font-bold text-right p-accent">'+i.quantity+(i.unit||'')+'</td>'
         +'<td class="text-center">'+(matched?'<i class="fas fa-check-circle text-green-500"></i>':'<i class="far fa-circle text-gray-300"></i>')+'</td></tr>';
     }).join('')
     +'</tbody></table></div>'
@@ -885,7 +899,7 @@ async function loadStores() {
       +'<td class="font-medium">'+s.store_name+'</td>'
       +'<td class="text-gray-500">'+(s.section_name||'-')+'</td>'
       +'<td class="text-gray-500">'+(s.phone||'-')+'</td>'
-      +'<td class="font-mono text-sm" style="color:#3d6444">'+s.login_id+'</td>'
+      +'<td class="font-mono text-sm p-accent">'+s.login_id+'</td>'
       +'<td>'+(s.is_test?'<span class="sbadge" style="background:#fef3c7;color:#b45309">テスト</span>':'')+'</td>'
       +'<td class="flex items-center gap-2">'
       +'<button onclick="openStoreModal('+s.id+')" class="text-xs btn-s py-1 px-2"><i class="fas fa-edit mr-1"></i>編集</button>'
