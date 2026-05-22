@@ -4,1028 +4,967 @@ export function getAdminPage(): string {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OrderFlow - 管理者画面</title>
-<script src="https://cdn.tailwindcss.com"></script>
+<title>管理者画面 | OrderFlow</title>
+<script src="https://cdn.tailwindcss.com"><\/script>
 <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
 <style>
-  :root{--primary:#2563eb;--sidebar:#1e293b}
-  body{font-family:'Noto Sans JP',sans-serif}
-  .sidebar{width:240px;background:var(--sidebar);color:#fff;min-height:100vh;position:fixed;top:0;left:0;z-index:30;transition:transform .3s}
-  .sidebar-item{display:flex;align-items:center;gap:.75rem;padding:.65rem 1.25rem;border-radius:.5rem;cursor:pointer;transition:background .15s;font-size:.9rem;color:#cbd5e1}
-  .sidebar-item:hover,.sidebar-item.active{background:rgba(255,255,255,.1);color:#fff}
-  .sidebar-item.active{background:var(--primary);color:#fff}
-  .main-content{margin-left:240px;padding:1.5rem;min-height:100vh;background:#f1f5f9}
-  .card{background:#fff;border-radius:.75rem;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-  .btn-primary{background:var(--primary);color:#fff;padding:.5rem 1.25rem;border-radius:.5rem;font-weight:600;cursor:pointer;transition:opacity .2s;border:none}
-  .btn-primary:hover{opacity:.85}
-  .btn-secondary{background:#e5e7eb;color:#374151;padding:.5rem 1.25rem;border-radius:.5rem;font-weight:600;cursor:pointer;border:none}
-  .btn-danger{background:#ef4444;color:#fff;padding:.5rem 1.25rem;border-radius:.5rem;font-weight:600;cursor:pointer;border:none}
-  .btn-success{background:#10b981;color:#fff;padding:.5rem 1.25rem;border-radius:.5rem;font-weight:600;cursor:pointer;border:none}
-  .badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.75rem;font-weight:600}
-  .form-input{width:100%;border:1px solid #d1d5db;border-radius:.5rem;padding:.6rem .75rem;font-size:.9rem}
-  .form-input:focus{outline:none;ring:2px;border-color:var(--primary)}
-  .form-label{display:block;font-size:.875rem;font-weight:500;color:#374151;margin-bottom:.25rem}
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:flex;align-items:center;justify-content:center}
-  .modal-box{background:#fff;border-radius:1rem;padding:2rem;max-width:640px;width:95%;max-height:90vh;overflow-y:auto}
-  .status-badge-pending{background:#fef3c7;color:#92400e}
-  .status-badge-confirmed{background:#dbeafe;color:#1e40af}
-  .status-badge-preparing{background:#ede9fe;color:#5b21b6}
-  .status-badge-inspecting{background:#fce7f3;color:#9d174d}
-  .status-badge-shipped{background:#d1fae5;color:#065f46}
-  .status-badge-cancelled{background:#f3f4f6;color:#374151}
-  table{width:100%;border-collapse:collapse}
-  th{padding:.6rem .75rem;background:#f8fafc;text-align:left;font-size:.8rem;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0}
-  td{padding:.7rem .75rem;border-bottom:1px solid #f1f5f9;font-size:.875rem}
-  tr:hover td{background:#f8fafc}
-  .section-hidden{display:none}
-  @media(max-width:768px){
-    .sidebar{transform:translateX(-100%)}
-    .sidebar.open{transform:translateX(0)}
-    .main-content{margin-left:0}
-  }
+body{background:linear-gradient(135deg,#f0f4f0 0%,#e4ece4 100%);min-height:100vh;
+  font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;}
+.card{background:rgba(255,255,255,.88);backdrop-filter:blur(8px);border-radius:14px;
+  box-shadow:0 2px 16px rgba(80,110,80,.10),0 1px 4px rgba(0,0,0,.04);border:1px solid rgba(180,210,180,.4);}
+.btn-p{background:linear-gradient(135deg,#5d8464,#3d6444);color:#fff;border-radius:9px;
+  padding:8px 18px;font-weight:700;transition:all .2s;border:none;cursor:pointer;font-size:.875rem;}
+.btn-p:hover{filter:brightness(1.08);transform:translateY(-1px);}
+.btn-p:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.btn-s{background:linear-gradient(135deg,#f0ece4,#e4ddd0);color:#5a5040;border-radius:9px;
+  padding:8px 18px;font-weight:700;transition:all .2s;border:1px solid rgba(160,140,100,.3);cursor:pointer;font-size:.875rem;}
+.btn-s:hover{filter:brightness(.97);transform:translateY(-1px);}
+.btn-d{background:linear-gradient(135deg,#e07070,#c05050);color:#fff;border-radius:8px;
+  padding:5px 10px;font-size:.78rem;border:none;cursor:pointer;transition:all .2s;}
+.btn-d:hover{filter:brightness(1.08);}
+.btn-i{background:linear-gradient(135deg,#4a9cc0,#2a7aa0);color:#fff;border-radius:9px;
+  padding:8px 18px;font-weight:700;transition:all .2s;border:none;cursor:pointer;font-size:.875rem;}
+.btn-i:hover{filter:brightness(1.08);transform:translateY(-1px);}
+.btn-warn{background:linear-gradient(135deg,#f5a623,#e08000);color:#fff;border-radius:9px;
+  padding:8px 18px;font-weight:700;transition:all .2s;border:none;cursor:pointer;font-size:.875rem;}
+.btn-warn:hover{filter:brightness(1.07);transform:translateY(-1px);}
+.form-input,.form-select{border:1.5px solid #c8d8c0;border-radius:9px;padding:8px 12px;
+  background:rgba(255,255,255,.9);transition:border-color .2s,box-shadow .2s;width:100%;font-size:.9rem;}
+.form-input:focus,.form-select:focus{outline:none;border-color:#5d8464;box-shadow:0 0 0 3px rgba(93,132,100,.15);}
+.nav-item{padding:10px 14px;border-radius:10px;cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;gap:10px;font-size:.875rem;font-weight:600;color:#5a6860;}
+.nav-item:hover{background:rgba(93,132,100,.1);color:#3d6444;}
+.nav-item.active{background:linear-gradient(135deg,#5d8464,#3d6444);color:#fff;box-shadow:0 2px 8px rgba(60,100,70,.25);}
+.sbadge{padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;white-space:nowrap;}
+.s-pending{background:#fff3cd;color:#856404;}
+.s-confirmed{background:#d1ecf1;color:#0c5460;}
+.s-preparing{background:#e8d5f5;color:#5a1fa2;}
+.s-inspecting{background:#fce4ec;color:#8b174d;}
+.s-shipped{background:#d1e7dd;color:#0a3622;}
+.s-cancelled{background:#f8d7da;color:#842029;}
+th{padding:10px 12px;text-align:left;font-size:.75rem;font-weight:700;color:#4a6b4a;white-space:nowrap;}
+td{padding:9px 12px;font-size:.85rem;border-bottom:1px solid rgba(180,210,180,.2);}
+tr:hover td{background:rgba(93,132,100,.04);}
+.tbl-header{background:linear-gradient(135deg,#f0f7f0,#e4f0e4);}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;
+  display:flex;align-items:center;justify-content:center;padding:16px;}
+.modal-box{background:#fff;border-radius:16px;padding:28px;width:100%;
+  box-shadow:0 20px 60px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto;}
+.sec-title{font-size:1rem;font-weight:700;color:#3d6444;display:flex;align-items:center;gap:8px;margin-bottom:16px;}
+.sec-title::after{content:'';flex:1;height:1px;background:linear-gradient(to right,#b0d0b0,transparent);}
+.loading{display:inline-block;width:16px;height:16px;border:2px solid #ccc;
+  border-top-color:#5d8464;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fade-in{animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.new-badge{background:linear-gradient(135deg,#ff6b6b,#ee5a24);color:#fff;font-size:.65rem;font-weight:700;
+  padding:2px 6px;border-radius:6px;margin-left:4px;}
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:150;display:none;}
+.drawer-overlay.open{display:block;}
+.drawer{position:fixed;top:0;left:0;bottom:0;width:260px;background:#fff;z-index:160;
+  transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+  box-shadow:4px 0 20px rgba(0,0,0,.15);overflow-y:auto;}
+.drawer.open{transform:translateX(0);}
+.upload-zone{border:2px dashed #b0d0b0;border-radius:12px;padding:28px;text-align:center;
+  cursor:pointer;transition:all .2s;background:rgba(240,250,240,.5);}
+.upload-zone:hover{border-color:#5d8464;background:rgba(93,132,100,.05);}
+.toggle-switch{position:relative;display:inline-block;width:44px;height:24px;}
+.toggle-switch input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:24px;transition:.3s;}
+.toggle-slider:before{position:absolute;content:'';width:18px;height:18px;left:3px;bottom:3px;
+  background:#fff;border-radius:50%;transition:.3s;}
+input:checked+.toggle-slider{background:#5d8464;}
+input:checked+.toggle-slider:before{transform:translateX(20px);}
+.stat-card{background:rgba(255,255,255,.88);border-radius:14px;padding:20px 22px;
+  border:1px solid rgba(180,210,180,.4);box-shadow:0 2px 10px rgba(80,110,80,.08);
+  cursor:pointer;transition:all .2s;}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 4px 18px rgba(80,110,80,.14);}
+.page-section{display:none;}
+.page-section.active{display:block;}
+@media(max-width:768px){.sidebar-desktop{display:none!important;}.header-page-name{display:block;}}
+@media(min-width:769px){.mobile-menu-btn{display:none!important;}.header-page-name{display:none;}}
 </style>
 </head>
-<body class="bg-slate-100">
+<body>
 
-<!-- サイドバー -->
-<aside class="sidebar" id="sidebar">
-  <div class="p-5 border-b border-slate-700">
-    <div class="flex items-center gap-2">
-      <span class="text-2xl">📦</span>
-      <div>
-        <p id="admin-site-name" class="font-bold text-white text-sm">OrderFlow</p>
-        <p class="text-xs text-slate-400">管理者画面</p>
+<!-- ドロワーオーバーレイ(スマホ) -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawerMenu">
+  <div class="p-4 border-b border-green-100">
+    <div class="flex items-center gap-3 mb-2">
+      <div style="background:linear-gradient(135deg,#5d8464,#3d6444);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+        <i class="fas fa-cog text-white text-sm"></i>
       </div>
+      <div><p class="font-bold text-gray-800 text-sm">管理者メニュー</p>
+        <p id="drawerAdminName" class="text-xs text-gray-400"></p></div>
     </div>
   </div>
-  <nav class="p-3 space-y-1">
-    <div class="sidebar-item active" onclick="showSection('dashboard')" id="nav-dashboard">
-      <i class="fas fa-tachometer-alt w-4"></i>ダッシュボード
-    </div>
-    <div class="sidebar-item" onclick="showSection('orders')" id="nav-orders">
-      <i class="fas fa-clipboard-list w-4"></i>受注管理
-    </div>
-    <div class="sidebar-item" onclick="showSection('products')" id="nav-products">
-      <i class="fas fa-box w-4"></i>商品マスタ
-    </div>
-    <div class="sidebar-item" onclick="showSection('stores')" id="nav-stores">
-      <i class="fas fa-store w-4"></i>発注元マスタ
-    </div>
-    <div class="sidebar-item" onclick="showSection('notices')" id="nav-notices">
-      <i class="fas fa-bell w-4"></i>お知らせ管理
-    </div>
-    <div class="sidebar-item" onclick="showSection('email')" id="nav-email">
-      <i class="fas fa-envelope w-4"></i>メール設定
-    </div>
-    <div class="sidebar-item" onclick="showSection('settings')" id="nav-settings">
-      <i class="fas fa-cog w-4"></i>システム設定
-    </div>
-    <hr class="border-slate-700 my-2">
-    <div class="sidebar-item" onclick="logout()">
-      <i class="fas fa-sign-out-alt w-4"></i>ログアウト
-    </div>
+  <nav class="p-3 space-y-1" id="drawerNav">
+    <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')"><i class="fas fa-tachometer-alt w-4"></i>ダッシュボード</div>
+    <div class="nav-item" data-page="orders" onclick="switchPage('orders')"><i class="fas fa-inbox w-4"></i>受注管理</div>
+    <div class="text-xs font-bold text-gray-400 px-4 pt-3 pb-1">マスタ管理</div>
+    <div class="nav-item" data-page="products" onclick="switchPage('products')"><i class="fas fa-box w-4"></i>商品マスタ</div>
+    <div class="nav-item" data-page="stores" onclick="switchPage('stores')"><i class="fas fa-store w-4"></i>発注元マスタ</div>
+    <div class="text-xs font-bold text-gray-400 px-4 pt-3 pb-1">設定</div>
+    <div class="nav-item" data-page="notices" onclick="switchPage('notices')"><i class="fas fa-bell w-4"></i>お知らせ</div>
+    <div class="nav-item" data-page="email" onclick="switchPage('email')"><i class="fas fa-envelope w-4"></i>メール設定</div>
+    <div class="nav-item" data-page="settings" onclick="switchPage('settings')"><i class="fas fa-cog w-4"></i>システム設定</div>
   </nav>
-</aside>
+  <div class="p-3 border-t border-gray-100 mt-2">
+    <button onclick="doLogout()" class="btn-s w-full text-center"><i class="fas fa-sign-out-alt mr-2"></i>ログアウト</button>
+  </div>
+</div>
 
-<!-- ログイン -->
-<div id="login-view" class="min-h-screen flex items-center justify-center p-4 bg-slate-100">
-  <div class="card p-8 w-full max-w-md">
-    <div class="text-center mb-8">
-      <div class="text-5xl mb-3">🔐</div>
-      <h1 class="text-2xl font-bold text-gray-800">管理者ログイン</h1>
-      <p id="admin-site-name-login" class="text-gray-500 text-sm mt-1">OrderFlow</p>
+<!-- ログイン画面 -->
+<div id="loginPage" class="min-h-screen flex items-center justify-center p-4">
+  <div class="card p-8 w-full max-w-sm fade-in">
+    <div class="text-center mb-6">
+      <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+        style="background:linear-gradient(135deg,#5d8464,#3d6444);">
+        <i class="fas fa-lock text-white text-2xl"></i>
+      </div>
+      <h1 class="text-xl font-bold text-gray-800">管理者ログイン</h1>
+      <p id="loginSiteName" class="text-xs text-gray-400 mt-1">OrderFlow</p>
     </div>
-    <div id="login-error" class="hidden bg-red-50 text-red-700 rounded-lg p-3 mb-4 text-sm"></div>
-    <form id="login-form">
-      <div class="mb-4">
-        <label class="form-label">ユーザー名</label>
-        <input id="admin-username" type="text" class="form-input" placeholder="admin" required>
+    <div class="space-y-4">
+      <div><label class="block text-sm font-semibold text-gray-600 mb-1">ユーザー名</label>
+        <input type="text" id="loginUser" class="form-input" placeholder="admin" autocomplete="username"></div>
+      <div><label class="block text-sm font-semibold text-gray-600 mb-1">パスワード</label>
+        <div class="relative">
+          <input type="password" id="loginPass" class="form-input pr-10" placeholder="••••••••" autocomplete="current-password">
+          <button type="button" onclick="togglePw('loginPass',this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><i class="fas fa-eye text-sm"></i></button>
+        </div>
       </div>
-      <div class="mb-6">
-        <label class="form-label">パスワード</label>
-        <input id="admin-password" type="password" class="form-input" placeholder="パスワード" required>
-      </div>
-      <button type="submit" class="btn-primary w-full py-3 text-base">
-        <i class="fas fa-sign-in-alt mr-2"></i>ログイン
-      </button>
-    </form>
-    <p class="text-center text-xs text-gray-400 mt-6"><a href="/" class="text-blue-500 hover:underline">← 発注ポータルへ</a></p>
+      <div id="loginError" class="text-red-500 text-sm hidden text-center bg-red-50 rounded-lg p-2"></div>
+      <button onclick="doLogin()" id="loginBtn" class="btn-p w-full py-3"><i class="fas fa-sign-in-alt mr-2"></i>ログイン</button>
+    </div>
+    <p class="text-center mt-4 text-xs text-gray-400">
+      <a href="/" class="hover:underline text-green-600"><i class="fas fa-arrow-left mr-1"></i>発注画面へ戻る</a>
+    </p>
   </div>
 </div>
 
 <!-- メイン -->
-<div id="main-view" class="hidden">
-  <div class="main-content">
+<div id="mainPage" class="hidden flex">
+  <!-- サイドバー(デスクトップ) -->
+  <aside class="sidebar-desktop w-64 flex-shrink-0 min-h-screen p-4 sticky top-0 self-start" style="max-height:100vh;overflow-y:auto;">
+    <div class="card p-4 mb-4">
+      <div class="flex items-center gap-3">
+        <div style="background:linear-gradient(135deg,#5d8464,#3d6444);width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;">
+          <i class="fas fa-box text-white"></i>
+        </div>
+        <div>
+          <p id="sidebarSiteName" class="font-bold text-gray-800 text-sm leading-tight">OrderFlow</p>
+          <p class="text-xs text-gray-400">管理者画面</p>
+        </div>
+      </div>
+    </div>
+    <nav class="space-y-1">
+      <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')"><i class="fas fa-tachometer-alt w-4"></i>ダッシュボード</div>
+      <div class="nav-item" data-page="orders" onclick="switchPage('orders')"><i class="fas fa-inbox w-4"></i>受注管理</div>
+      <p class="text-xs font-bold text-gray-400 px-3 pt-3 pb-1">マスタ管理</p>
+      <div class="nav-item" data-page="products" onclick="switchPage('products')"><i class="fas fa-box w-4"></i>商品マスタ</div>
+      <div class="nav-item" data-page="stores" onclick="switchPage('stores')"><i class="fas fa-store w-4"></i>発注元マスタ</div>
+      <p class="text-xs font-bold text-gray-400 px-3 pt-3 pb-1">設定</p>
+      <div class="nav-item" data-page="notices" onclick="switchPage('notices')"><i class="fas fa-bell w-4"></i>お知らせ</div>
+      <div class="nav-item" data-page="email" onclick="switchPage('email')"><i class="fas fa-envelope w-4"></i>メール設定</div>
+      <div class="nav-item" data-page="settings" onclick="switchPage('settings')"><i class="fas fa-cog w-4"></i>システム設定</div>
+      <div class="mt-4 pt-3 border-t border-gray-100">
+        <div class="nav-item" onclick="doLogout()"><i class="fas fa-sign-out-alt w-4"></i>ログアウト</div>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- コンテンツエリア -->
+  <div class="flex-1 min-w-0 p-4 md:p-6">
     <!-- ヘッダー -->
     <header class="flex items-center justify-between mb-6">
-      <button class="md:hidden btn-secondary p-2" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-      <h1 id="section-title" class="text-xl font-bold text-gray-800">ダッシュボード</h1>
-      <span id="admin-display" class="text-sm text-gray-500"></span>
+      <div class="flex items-center gap-3">
+        <button class="mobile-menu-btn btn-s p-2 px-3" onclick="openDrawer()"><i class="fas fa-bars"></i></button>
+        <h1 id="pageTitle" class="text-lg font-bold text-gray-800 header-page-name">ダッシュボード</h1>
+        <h1 id="pageTitleDesktop" class="text-lg font-bold text-gray-800 hidden md:block">ダッシュボード</h1>
+      </div>
+      <span id="adminDisplayName" class="text-sm text-gray-500 font-semibold hidden sm:block"></span>
     </header>
 
     <!-- ダッシュボード -->
-    <section id="section-dashboard">
+    <div id="page-dashboard" class="page-section active fade-in">
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div class="card p-5 cursor-pointer hover:shadow-md" onclick="showSection('orders')">
+        <div class="stat-card" onclick="switchPage('orders');filterOrderStatus('pending')">
           <p class="text-xs text-gray-500 mb-1">未確認の発注</p>
-          <p id="stat-pending" class="text-3xl font-bold text-amber-500">-</p>
+          <p id="statPending" class="text-3xl font-bold text-amber-500">-</p>
         </div>
-        <div class="card p-5 cursor-pointer hover:shadow-md" onclick="showSection('orders')">
+        <div class="stat-card" onclick="switchPage('orders')">
           <p class="text-xs text-gray-500 mb-1">対応中</p>
-          <p id="stat-preparing" class="text-3xl font-bold text-blue-500">-</p>
+          <p id="statPreparing" class="text-3xl font-bold" style="color:#5d8464">-</p>
         </div>
-        <div class="card p-5 cursor-pointer hover:shadow-md" onclick="showSection('orders')">
+        <div class="stat-card" onclick="switchPage('orders');filterOrderStatus('shipped')">
           <p class="text-xs text-gray-500 mb-1">出荷完了（累計）</p>
-          <p id="stat-shipped" class="text-3xl font-bold text-green-500">-</p>
+          <p id="statShipped" class="text-3xl font-bold text-blue-500">-</p>
         </div>
-        <div class="card p-5">
+        <div class="stat-card" onclick="switchPage('products')">
           <p class="text-xs text-gray-500 mb-1">登録商品数</p>
-          <p id="stat-products" class="text-3xl font-bold text-purple-500">-</p>
+          <p id="statProducts" class="text-3xl font-bold text-purple-500">-</p>
         </div>
       </div>
       <div class="card p-6">
-        <h2 class="font-bold text-gray-800 mb-4">最新の受注</h2>
-        <div id="recent-orders" class="space-y-2"></div>
+        <div class="sec-title"><i class="fas fa-bell text-amber-500"></i> 未確認の発注</div>
+        <div id="recentOrders"></div>
       </div>
-    </section>
+    </div>
 
     <!-- 受注管理 -->
-    <section id="section-orders" class="section-hidden">
-      <div class="flex flex-wrap gap-3 mb-4 items-center">
-        <div class="relative flex-1 min-w-[180px]">
-          <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
-          <input id="order-search" type="text" placeholder="発注番号・店舗名・担当者検索" class="form-input pl-9" oninput="loadOrders()">
+    <div id="page-orders" class="page-section fade-in">
+      <div class="card p-5 mb-4">
+        <div class="flex flex-wrap gap-3 items-end">
+          <div class="relative flex-1 min-w-[180px]">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+            <input type="text" id="orderSearch" placeholder="発注番号・店舗名・担当者名" class="form-input pl-9" oninput="loadOrders()">
+          </div>
+          <select id="orderStatusFilter" class="form-select w-auto" onchange="loadOrders()">
+            <option value="">全ステータス</option>
+            <option value="pending">未確認</option>
+            <option value="confirmed">受注確認済</option>
+            <option value="preparing">出荷準備中</option>
+            <option value="inspecting">検品中</option>
+            <option value="shipped">出荷完了</option>
+            <option value="cancelled">キャンセル</option>
+          </select>
+          <button onclick="loadOrders()" class="btn-s px-3 py-2"><i class="fas fa-sync-alt"></i></button>
         </div>
-        <select id="order-status-filter" class="form-input w-auto" onchange="loadOrders()">
-          <option value="">全ステータス</option>
-          <option value="pending">未確認</option>
-          <option value="confirmed">受注確認済</option>
-          <option value="preparing">出荷準備中</option>
-          <option value="inspecting">検品中</option>
-          <option value="shipped">出荷完了</option>
-          <option value="cancelled">キャンセル</option>
-        </select>
-        <button onclick="loadOrders()" class="btn-secondary"><i class="fas fa-sync-alt"></i></button>
       </div>
       <div class="card overflow-hidden">
         <div class="overflow-x-auto">
-          <table>
-            <thead><tr>
-              <th>発注番号</th><th>店舗/部署</th><th>担当者</th><th>納品希望日</th>
-              <th>ステータス</th><th>発注日時</th><th>操作</th>
-            </tr></thead>
-            <tbody id="orders-tbody"></tbody>
+          <table class="w-full">
+            <thead class="tbl-header">
+              <tr><th>発注番号</th><th>店舗/部署</th><th>担当者</th><th>納品希望日</th><th>ステータス</th><th>発注日時</th><th>操作</th></tr>
+            </thead>
+            <tbody id="ordersTbody"><tr><td colspan="7" class="text-center py-8 text-gray-400"><span class="loading"></span></td></tr></tbody>
           </table>
         </div>
       </div>
-    </section>
+    </div>
 
     <!-- 商品マスタ -->
-    <section id="section-products" class="section-hidden">
-      <div class="flex flex-wrap gap-3 mb-4 items-center">
-        <div class="relative flex-1 min-w-[180px]">
-          <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
-          <input id="product-search-admin" type="text" placeholder="商品名・コード・バーコード検索" class="form-input pl-9" oninput="loadProducts()">
+    <div id="page-products" class="page-section fade-in">
+      <div class="card p-5 mb-4">
+        <div class="flex flex-wrap gap-3 items-center">
+          <div class="relative flex-1 min-w-[180px]">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+            <input type="text" id="productSearchAdmin" placeholder="商品名・コード・バーコード検索" class="form-input pl-9" oninput="loadProducts()">
+          </div>
+          <button onclick="openProductModal()" class="btn-p"><i class="fas fa-plus mr-1"></i>商品追加</button>
+          <button onclick="openImportModal()" class="btn-i"><i class="fas fa-file-import mr-1"></i>CSV取込</button>
         </div>
-        <button onclick="openProductModal()" class="btn-primary"><i class="fas fa-plus mr-1"></i>商品追加</button>
-        <button onclick="openImportModal()" class="btn-secondary"><i class="fas fa-file-import mr-1"></i>CSV取込</button>
       </div>
       <div class="card overflow-hidden">
         <div class="overflow-x-auto">
-          <table>
-            <thead><tr>
-              <th>カテゴリ</th><th>ブランド</th><th>商品名</th><th>商品コード</th>
-              <th>バーコード</th><th>単位</th><th>状態</th><th>操作</th>
-            </tr></thead>
-            <tbody id="products-tbody"></tbody>
+          <table class="w-full">
+            <thead class="tbl-header">
+              <tr><th>カテゴリ</th><th>ブランド</th><th>商品名</th><th>商品コード</th><th>バーコード</th><th>単位</th><th>状態</th><th>操作</th></tr>
+            </thead>
+            <tbody id="productsTbody"></tbody>
           </table>
         </div>
       </div>
-    </section>
+    </div>
 
     <!-- 発注元マスタ -->
-    <section id="section-stores" class="section-hidden">
+    <div id="page-stores" class="page-section fade-in">
       <div class="flex justify-between items-center mb-4">
         <p class="text-sm text-gray-500">発注元（店舗/部署）の管理</p>
-        <button onclick="openStoreModal()" class="btn-primary"><i class="fas fa-plus mr-1"></i>発注元追加</button>
+        <button onclick="openStoreModal()" class="btn-p"><i class="fas fa-plus mr-1"></i>発注元追加</button>
       </div>
       <div class="card overflow-hidden">
         <div class="overflow-x-auto">
-          <table>
-            <thead><tr><th>店舗名</th><th>部署名</th><th>電話番号</th><th>ログインID</th><th>テスト</th><th>操作</th></tr></thead>
-            <tbody id="stores-tbody"></tbody>
+          <table class="w-full">
+            <thead class="tbl-header"><tr><th>店舗名</th><th>部署名</th><th>電話番号</th><th>ログインID</th><th>テスト</th><th>操作</th></tr></thead>
+            <tbody id="storesTbody"></tbody>
           </table>
         </div>
       </div>
-    </section>
+    </div>
 
     <!-- お知らせ管理 -->
-    <section id="section-notices" class="section-hidden">
+    <div id="page-notices" class="page-section fade-in">
       <div class="flex justify-between items-center mb-4">
         <p class="text-sm text-gray-500">発注者へのお知らせ管理</p>
-        <button onclick="openNoticeModal()" class="btn-primary"><i class="fas fa-plus mr-1"></i>お知らせ追加</button>
+        <button onclick="openNoticeModal()" class="btn-p"><i class="fas fa-plus mr-1"></i>お知らせ追加</button>
       </div>
       <div class="card overflow-hidden">
         <div class="overflow-x-auto">
-          <table>
-            <thead><tr><th>タイトル</th><th>種類</th><th>有効期限</th><th>作成日</th><th>操作</th></tr></thead>
-            <tbody id="notices-tbody"></tbody>
+          <table class="w-full">
+            <thead class="tbl-header"><tr><th>タイトル</th><th>種類</th><th>有効期限</th><th>作成日</th><th>操作</th></tr></thead>
+            <tbody id="noticesTbody"></tbody>
           </table>
         </div>
       </div>
-    </section>
+    </div>
 
     <!-- メール設定 -->
-    <section id="section-email" class="section-hidden">
-      <div class="card p-6 max-w-xl">
-        <h2 class="font-bold text-gray-800 mb-4"><i class="fas fa-envelope mr-2 text-blue-500"></i>メール設定（Resend API）</h2>
+    <div id="page-email" class="page-section fade-in">
+      <div class="card p-6" style="max-width:540px">
+        <div class="sec-title"><i class="fas fa-envelope text-green-600"></i> メール設定（Resend API）</div>
         <div class="space-y-4">
-          <div>
-            <label class="form-label">メイン通知先メールアドレス</label>
-            <input id="main-email" type="email" class="form-input" placeholder="admin@example.com">
-          </div>
-          <div>
-            <label class="form-label">サブ通知先メールアドレス（任意）</label>
-            <input id="sub-email" type="email" class="form-input" placeholder="sub@example.com">
-          </div>
-          <div>
-            <label class="form-label">Resend APIキー</label>
+          <div><label class="block text-sm font-semibold text-gray-600 mb-1">メイン通知先メールアドレス</label>
+            <input id="mainEmail" type="email" class="form-input" placeholder="admin@example.com"></div>
+          <div><label class="block text-sm font-semibold text-gray-600 mb-1">サブ通知先（任意）</label>
+            <input id="subEmail" type="email" class="form-input" placeholder="sub@example.com"></div>
+          <div><label class="block text-sm font-semibold text-gray-600 mb-1">Resend APIキー</label>
             <div class="relative">
-              <input id="resend-api-key" type="password" class="form-input pr-10" placeholder="re_xxxxx">
-              <button type="button" onclick="toggleInputType('resend-api-key')" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"><i class="fas fa-eye"></i></button>
+              <input id="resendApiKey" type="password" class="form-input pr-10" placeholder="re_xxxxx">
+              <button type="button" onclick="togglePw('resendApiKey',this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><i class="fas fa-eye text-sm"></i></button>
             </div>
-            <p class="text-xs text-gray-400 mt-1">Resend（<a href="https://resend.com" target="_blank" class="text-blue-500">resend.com</a>）でAPIキーを取得してください</p>
+            <p class="text-xs text-gray-400 mt-1"><a href="https://resend.com" target="_blank" class="text-green-600 hover:underline">resend.com</a> でAPIキーを取得してください</p>
           </div>
         </div>
         <div class="flex gap-3 mt-6">
-          <button onclick="saveEmailSettings()" class="btn-primary"><i class="fas fa-save mr-1"></i>保存</button>
-          <button onclick="sendTestEmail()" class="btn-secondary"><i class="fas fa-paper-plane mr-1"></i>テスト送信</button>
+          <button onclick="saveEmailSettings()" class="btn-p"><i class="fas fa-save mr-1"></i>保存</button>
+          <button onclick="sendTestEmail()" class="btn-s"><i class="fas fa-paper-plane mr-1"></i>テスト送信</button>
         </div>
       </div>
-    </section>
+    </div>
 
     <!-- システム設定 -->
-    <section id="section-settings" class="section-hidden">
-      <div class="grid gap-6 max-w-xl">
+    <div id="page-settings" class="page-section fade-in">
+      <div class="grid gap-6" style="max-width:520px">
         <div class="card p-6">
-          <h2 class="font-bold text-gray-800 mb-4"><i class="fas fa-cog mr-2 text-gray-500"></i>一般設定</h2>
+          <div class="sec-title"><i class="fas fa-cog text-green-600"></i> 一般設定</div>
           <div class="space-y-4">
-            <div>
-              <label class="form-label">システム名</label>
-              <input id="setting-site-name" type="text" class="form-input" placeholder="OrderFlow">
-            </div>
-            <div>
-              <label class="form-label">システム説明文</label>
-              <input id="setting-site-description" type="text" class="form-input" placeholder="汎用発注システム">
-            </div>
-            <div>
-              <label class="form-label">テーマカラー</label>
+            <div><label class="block text-sm font-semibold text-gray-600 mb-1">システム名</label>
+              <input id="settingSiteName" type="text" class="form-input" placeholder="OrderFlow"></div>
+            <div><label class="block text-sm font-semibold text-gray-600 mb-1">説明文</label>
+              <input id="settingSiteDesc" type="text" class="form-input" placeholder="汎用発注システム"></div>
+            <div><label class="block text-sm font-semibold text-gray-600 mb-1">テーマカラー</label>
               <div class="flex gap-3 items-center">
-                <input id="setting-primary-color" type="color" class="w-12 h-10 rounded cursor-pointer border border-gray-300" value="#2563eb">
-                <input id="setting-primary-color-hex" type="text" class="form-input w-32" placeholder="#2563eb" oninput="syncColor(this)">
+                <input id="settingColor" type="color" class="w-12 h-10 rounded cursor-pointer border border-gray-300" value="#5d8464"
+                  oninput="document.getElementById('settingColorHex').value=this.value">
+                <input id="settingColorHex" type="text" class="form-input" style="width:120px" placeholder="#5d8464"
+                  oninput="syncColor(this)">
               </div>
             </div>
           </div>
-          <button onclick="saveSettings()" class="btn-primary mt-5"><i class="fas fa-save mr-1"></i>設定を保存</button>
+          <button onclick="saveSettings()" class="btn-p mt-5"><i class="fas fa-save mr-1"></i>設定を保存</button>
         </div>
         <div class="card p-6">
-          <h2 class="font-bold text-gray-800 mb-4"><i class="fas fa-lock mr-2 text-red-500"></i>パスワード変更</h2>
+          <div class="sec-title"><i class="fas fa-key text-red-500"></i> パスワード変更</div>
           <div class="space-y-4">
-            <div>
-              <label class="form-label">現在のパスワード</label>
-              <input id="current-password" type="password" class="form-input">
-            </div>
-            <div>
-              <label class="form-label">新しいパスワード</label>
-              <input id="new-password" type="password" class="form-input">
-            </div>
-            <div>
-              <label class="form-label">新しいパスワード（確認）</label>
-              <input id="confirm-password" type="password" class="form-input">
-            </div>
+            <div><label class="block text-sm font-semibold text-gray-600 mb-1">現在のパスワード</label>
+              <input id="curPw" type="password" class="form-input"></div>
+            <div><label class="block text-sm font-semibold text-gray-600 mb-1">新しいパスワード</label>
+              <input id="newPw" type="password" class="form-input"></div>
+            <div><label class="block text-sm font-semibold text-gray-600 mb-1">確認</label>
+              <input id="confirmPw" type="password" class="form-input"></div>
           </div>
-          <button onclick="changePassword()" class="btn-danger mt-5"><i class="fas fa-key mr-1"></i>パスワード変更</button>
+          <button onclick="changePassword()" class="btn-d mt-5" style="padding:8px 18px;border-radius:9px;font-size:.875rem;"><i class="fas fa-key mr-1"></i>パスワード変更</button>
         </div>
       </div>
-    </section>
+    </div>
 
   </div>
 </div>
 
 <!-- 発注詳細モーダル -->
-<div id="order-modal" class="modal-overlay hidden">
-  <div class="modal-box" style="max-width:800px">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-bold"><i class="fas fa-clipboard-list mr-2"></i>発注詳細</h2>
-      <button onclick="closeModal('order-modal')" class="text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button>
+<div id="orderModal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:760px">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-clipboard-list text-green-600"></i>発注詳細</h2>
+      <button onclick="closeModal('orderModal')" class="text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button>
     </div>
-    <div id="order-modal-content"></div>
+    <div id="orderModalContent"></div>
   </div>
 </div>
 
 <!-- 商品モーダル -->
-<div id="product-modal" class="modal-overlay hidden">
-  <div class="modal-box">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-bold" id="product-modal-title">商品追加</h2>
-      <button onclick="closeModal('product-modal')" class="text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button>
+<div id="productModal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:520px">
+    <div class="flex items-center justify-between mb-4">
+      <h2 id="productModalTitle" class="text-lg font-bold text-gray-800">商品追加</h2>
+      <button onclick="closeModal('productModal')" class="text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button>
     </div>
-    <form id="product-form" class="space-y-4">
-      <input type="hidden" id="product-id">
+    <form id="productForm" class="space-y-4" onsubmit="saveProduct(event)">
+      <input type="hidden" id="productId">
       <div class="grid grid-cols-2 gap-4">
-        <div><label class="form-label">カテゴリ</label><input id="p-category" type="text" class="form-input" placeholder="飲料"></div>
-        <div><label class="form-label">ブランド</label><input id="p-brand" type="text" class="form-input" placeholder="メーカー名"></div>
+        <div><label class="block text-sm font-semibold text-gray-600 mb-1">カテゴリ</label><input id="pCategory" type="text" class="form-input" placeholder="飲料"></div>
+        <div><label class="block text-sm font-semibold text-gray-600 mb-1">ブランド</label><input id="pBrand" type="text" class="form-input"></div>
       </div>
-      <div><label class="form-label">商品名 <span class="text-red-500">*</span></label><input id="p-name" type="text" class="form-input" required></div>
+      <div><label class="block text-sm font-semibold text-gray-600 mb-1">商品名 <span class="text-red-400">*</span></label><input id="pName" type="text" class="form-input" required></div>
       <div class="grid grid-cols-2 gap-4">
-        <div><label class="form-label">商品コード</label><input id="p-code" type="text" class="form-input" placeholder="SKU-001"></div>
-        <div><label class="form-label">バーコード（JAN等）</label><input id="p-barcode" type="text" class="form-input" placeholder="4901234567890"></div>
+        <div><label class="block text-sm font-semibold text-gray-600 mb-1">商品コード</label><input id="pCode" type="text" class="form-input"></div>
+        <div><label class="block text-sm font-semibold text-gray-600 mb-1">バーコード</label><input id="pBarcode" type="text" class="form-input" placeholder="JAN等"></div>
       </div>
       <div class="grid grid-cols-2 gap-4">
-        <div><label class="form-label">単位</label><input id="p-unit" type="text" class="form-input" placeholder="個"></div>
+        <div><label class="block text-sm font-semibold text-gray-600 mb-1">単位</label><input id="pUnit" type="text" class="form-input" placeholder="個"></div>
         <div class="flex gap-4 items-end pb-2">
-          <label class="flex items-center gap-2 cursor-pointer"><input id="p-is-active" type="checkbox" checked class="w-4 h-4"> <span class="text-sm">有効</span></label>
-          <label class="flex items-center gap-2 cursor-pointer"><input id="p-is-new" type="checkbox" class="w-4 h-4"> <span class="text-sm">NEW</span></label>
+          <label class="flex items-center gap-2 cursor-pointer text-sm"><input id="pIsActive" type="checkbox" checked class="w-4 h-4 accent-green-600"> 有効</label>
+          <label class="flex items-center gap-2 cursor-pointer text-sm"><input id="pIsNew" type="checkbox" class="w-4 h-4 accent-red-500"> NEW</label>
         </div>
       </div>
-      <div class="flex gap-3 mt-4">
-        <button type="button" onclick="closeModal('product-modal')" class="btn-secondary flex-1">キャンセル</button>
-        <button type="submit" class="btn-primary flex-1">保存</button>
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="closeModal('productModal')" class="btn-s flex-1">キャンセル</button>
+        <button type="submit" class="btn-p flex-1">保存</button>
       </div>
     </form>
   </div>
 </div>
 
 <!-- CSV取込モーダル -->
-<div id="import-modal" class="modal-overlay hidden">
-  <div class="modal-box">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-bold"><i class="fas fa-file-import mr-2"></i>商品CSV取込</h2>
-      <button onclick="closeModal('import-modal')" class="text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button>
+<div id="importModal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:580px">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-file-import text-green-600"></i>商品CSV取込</h2>
+      <button onclick="closeModal('importModal')" class="text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button>
     </div>
-    <p class="text-sm text-gray-600 mb-3">CSV形式: <code class="bg-gray-100 px-2 py-0.5 rounded">category,brand,product_name,product_code,barcode,unit</code></p>
-    <textarea id="csv-input" rows="10" class="form-input font-mono text-xs" placeholder="category,brand,product_name,product_code,barcode,unit
+    <p class="text-sm text-gray-500 mb-2">1行目をヘッダーとして読み込みます。列名：<code class="bg-gray-100 px-1 rounded">category,brand,product_name,product_code,barcode,unit</code></p>
+    <textarea id="csvInput" rows="10" class="form-input font-mono text-xs" placeholder="category,brand,product_name,product_code,barcode,unit
 飲料,サントリー,プレミアムモルツ,DRK-001,4901777317871,缶"></textarea>
     <div class="flex gap-3 mt-4">
-      <button onclick="closeModal('import-modal')" class="btn-secondary flex-1">キャンセル</button>
-      <button onclick="importCSV()" class="btn-primary flex-1"><i class="fas fa-upload mr-1"></i>インポート</button>
+      <button onclick="closeModal('importModal')" class="btn-s flex-1">キャンセル</button>
+      <button onclick="importCSV()" class="btn-p flex-1"><i class="fas fa-upload mr-1"></i>インポート</button>
     </div>
   </div>
 </div>
 
 <!-- 発注元モーダル -->
-<div id="store-modal" class="modal-overlay hidden">
-  <div class="modal-box">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-bold" id="store-modal-title">発注元追加</h2>
-      <button onclick="closeModal('store-modal')" class="text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button>
+<div id="storeModal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:500px">
+    <div class="flex items-center justify-between mb-4">
+      <h2 id="storeModalTitle" class="text-lg font-bold text-gray-800">発注元追加</h2>
+      <button onclick="closeModal('storeModal')" class="text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button>
     </div>
-    <form id="store-form" class="space-y-4">
-      <input type="hidden" id="store-id">
+    <form id="storeForm" class="space-y-4" onsubmit="saveStore(event)">
+      <input type="hidden" id="storeId">
       <div class="grid grid-cols-2 gap-4">
-        <div><label class="form-label">店舗名 <span class="text-red-500">*</span></label><input id="s-name" type="text" class="form-input" required></div>
-        <div><label class="form-label">部署名</label><input id="s-section" type="text" class="form-input"></div>
+        <div><label class="block text-sm font-semibold text-gray-600 mb-1">店舗名 <span class="text-red-400">*</span></label><input id="sName" type="text" class="form-input" required></div>
+        <div><label class="block text-sm font-semibold text-gray-600 mb-1">部署名</label><input id="sSection" type="text" class="form-input"></div>
       </div>
       <div class="grid grid-cols-2 gap-4">
-        <div><label class="form-label">電話番号</label><input id="s-phone" type="text" class="form-input"></div>
-        <div><label class="form-label">FAX</label><input id="s-fax" type="text" class="form-input"></div>
+        <div><label class="block text-sm font-semibold text-gray-600 mb-1">電話番号</label><input id="sPhone" type="text" class="form-input"></div>
+        <div><label class="block text-sm font-semibold text-gray-600 mb-1">FAX</label><input id="sFax" type="text" class="form-input"></div>
       </div>
-      <div><label class="form-label">ログインID <span class="text-red-500">*</span></label><input id="s-login-id" type="text" class="form-input" required></div>
+      <div><label class="block text-sm font-semibold text-gray-600 mb-1">ログインID <span class="text-red-400">*</span></label><input id="sLoginId" type="text" class="form-input" required></div>
       <div>
-        <label class="form-label">パスワード <span id="s-pw-required" class="text-red-500">*</span></label>
+        <label class="block text-sm font-semibold text-gray-600 mb-1">パスワード <span id="sPwReq" class="text-red-400">*</span></label>
         <div class="relative">
-          <input id="s-password" type="password" class="form-input pr-10">
-          <button type="button" onclick="toggleInputType('s-password')" class="absolute right-3 top-2.5 text-gray-400"><i class="fas fa-eye"></i></button>
+          <input id="sPassword" type="password" class="form-input pr-10">
+          <button type="button" onclick="togglePw('sPassword',this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"><i class="fas fa-eye text-sm"></i></button>
         </div>
-        <p id="s-pw-note" class="text-xs text-gray-400 mt-1 hidden">変更する場合のみ入力</p>
+        <p id="sPwNote" class="text-xs text-gray-400 mt-1 hidden">変更する場合のみ入力してください</p>
       </div>
-      <label class="flex items-center gap-2 cursor-pointer"><input id="s-is-test" type="checkbox" class="w-4 h-4"> <span class="text-sm">テスト店舗</span></label>
-      <div class="flex gap-3 mt-4">
-        <button type="button" onclick="closeModal('store-modal')" class="btn-secondary flex-1">キャンセル</button>
-        <button type="submit" class="btn-primary flex-1">保存</button>
+      <label class="flex items-center gap-2 cursor-pointer text-sm"><input id="sIsTest" type="checkbox" class="w-4 h-4 accent-yellow-500"> テスト店舗</label>
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="closeModal('storeModal')" class="btn-s flex-1">キャンセル</button>
+        <button type="submit" class="btn-p flex-1">保存</button>
       </div>
     </form>
   </div>
 </div>
 
 <!-- お知らせモーダル -->
-<div id="notice-modal" class="modal-overlay hidden">
-  <div class="modal-box">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-bold" id="notice-modal-title">お知らせ追加</h2>
-      <button onclick="closeModal('notice-modal')" class="text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button>
+<div id="noticeModal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:520px">
+    <div class="flex items-center justify-between mb-4">
+      <h2 id="noticeModalTitle" class="text-lg font-bold text-gray-800">お知らせ追加</h2>
+      <button onclick="closeModal('noticeModal')" class="text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button>
     </div>
-    <form id="notice-form" class="space-y-4">
-      <input type="hidden" id="notice-id">
-      <div><label class="form-label">タイトル <span class="text-red-500">*</span></label><input id="n-title" type="text" class="form-input" required></div>
-      <div><label class="form-label">概要（一覧表示用）</label><input id="n-message" type="text" class="form-input" placeholder="短い説明文"></div>
-      <div><label class="form-label">本文</label><textarea id="n-body" rows="5" class="form-input resize-none"></textarea></div>
+    <form id="noticeForm" class="space-y-4" onsubmit="saveNotice(event)">
+      <input type="hidden" id="noticeId">
+      <div><label class="block text-sm font-semibold text-gray-600 mb-1">タイトル <span class="text-red-400">*</span></label><input id="nTitle" type="text" class="form-input" required></div>
+      <div><label class="block text-sm font-semibold text-gray-600 mb-1">概要（一覧表示用）</label><input id="nMessage" type="text" class="form-input" placeholder="短い説明文"></div>
+      <div><label class="block text-sm font-semibold text-gray-600 mb-1">本文</label><textarea id="nBody" rows="5" class="form-input resize-none"></textarea></div>
       <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="form-label">種類</label>
-          <select id="n-type" class="form-input">
+        <div><label class="block text-sm font-semibold text-gray-600 mb-1">種類</label>
+          <select id="nType" class="form-select">
             <option value="general">一般</option>
             <option value="important">重要</option>
             <option value="info">情報</option>
           </select>
         </div>
-        <div><label class="form-label">有効期限</label><input id="n-expire" type="datetime-local" class="form-input"></div>
+        <div><label class="block text-sm font-semibold text-gray-600 mb-1">有効期限</label><input id="nExpire" type="datetime-local" class="form-input"></div>
       </div>
-      <div class="flex gap-3 mt-4">
-        <button type="button" onclick="closeModal('notice-modal')" class="btn-secondary flex-1">キャンセル</button>
-        <button type="submit" class="btn-primary flex-1">保存</button>
+      <div class="flex gap-3 pt-2">
+        <button type="button" onclick="closeModal('noticeModal')" class="btn-s flex-1">キャンセル</button>
+        <button type="submit" class="btn-p flex-1">保存</button>
       </div>
     </form>
   </div>
 </div>
 
 <!-- トースト -->
-<div id="toast" class="fixed bottom-6 right-6 bg-green-600 text-white px-5 py-3 rounded-xl shadow-lg z-[100] hidden">
-  <i class="fas fa-check-circle mr-2"></i><span id="toast-msg"></span>
+<div id="toast" class="fixed bottom-6 right-6 z-[300] hidden">
+  <div id="toastInner" class="px-5 py-3 rounded-xl shadow-lg text-white font-semibold flex items-center gap-2 text-sm">
+    <i id="toastIcon" class="fas fa-check-circle"></i><span id="toastMsg"></span>
+  </div>
 </div>
 
 <script>
-// ============ 状態 ============
-let adminToken = localStorage.getItem('admin_token');
-let adminInfo = JSON.parse(localStorage.getItem('admin_info') || 'null');
-let currentSection = 'dashboard';
+var adminToken = localStorage.getItem('admin_token');
+var adminInfo  = JSON.parse(localStorage.getItem('admin_info') || 'null');
+var siteName   = 'OrderFlow';
+var currentPage = 'dashboard';
 
 // ============ 初期化 ============
 async function init() {
   await loadPublicSettings();
-  if (adminToken && adminInfo) {
-    showMain();
-  } else {
-    document.getElementById('login-view').classList.remove('hidden');
-  }
+  if (adminToken && adminInfo) showMain();
+  else document.getElementById('loginPage').classList.remove('hidden');
 }
 
 async function loadPublicSettings() {
   try {
-    const res = await fetch('/api/settings');
-    const data = await res.json();
-    const name = data.settings.site_name || 'OrderFlow';
-    const color = data.settings.primary_color || '#2563eb';
-    document.querySelectorAll('#admin-site-name,#admin-site-name-login').forEach(el => el.textContent = name);
-    document.title = name + ' - 管理者画面';
-    document.documentElement.style.setProperty('--primary', color);
-  } catch {}
+    var d = await (await fetch('/api/settings')).json();
+    siteName = d.settings.site_name || 'OrderFlow';
+    document.getElementById('loginSiteName').textContent = siteName;
+    document.title = '管理者画面 | ' + siteName;
+  } catch(e) {}
 }
 
-// ============ 認証 ============
-document.getElementById('login-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const username = document.getElementById('admin-username').value;
-  const password = document.getElementById('admin-password').value;
-  const errEl = document.getElementById('login-error');
-  errEl.classList.add('hidden');
+function togglePw(id, btn) {
+  var el = document.getElementById(id);
+  el.type = el.type === 'password' ? 'text' : 'password';
+  btn.querySelector('i').className = el.type === 'password' ? 'fas fa-eye text-sm' : 'fas fa-eye-slash text-sm';
+}
+
+async function doLogin() {
+  var user = document.getElementById('loginUser').value.trim();
+  var pw   = document.getElementById('loginPass').value;
+  var err  = document.getElementById('loginError');
+  var btn  = document.getElementById('loginBtn');
+  err.classList.add('hidden');
+  btn.disabled = true; btn.innerHTML = '<span class="loading"></span>';
   try {
-    const res = await fetch('/api/auth/admin/login', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({username, password}),
+    var res = await fetch('/api/auth/admin/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username:user, password:pw})
     });
-    const data = await res.json();
-    if (!res.ok) { errEl.textContent = data.error || 'ログイン失敗'; errEl.classList.remove('hidden'); return; }
-    adminToken = data.token;
-    adminInfo = data.admin;
+    var data = await res.json();
+    if (!res.ok) { err.textContent = data.error||'ログイン失敗'; err.classList.remove('hidden'); return; }
+    adminToken = data.token; adminInfo = data.admin;
     localStorage.setItem('admin_token', adminToken);
     localStorage.setItem('admin_info', JSON.stringify(adminInfo));
     showMain();
-  } catch { errEl.textContent = 'ネットワークエラー'; errEl.classList.remove('hidden'); }
-});
+  } catch(e) { err.textContent = 'ネットワークエラー'; err.classList.remove('hidden');
+  } finally { btn.disabled=false; btn.innerHTML='<i class="fas fa-sign-in-alt mr-2"></i>ログイン'; }
+}
+document.addEventListener('keydown', function(e){ if(e.key==='Enter' && !document.getElementById('loginPage').classList.contains('hidden')) doLogin(); });
 
-function logout() {
+function doLogout() {
   if (!confirm('ログアウトしますか？')) return;
-  adminToken = null; adminInfo = null;
   localStorage.removeItem('admin_token'); localStorage.removeItem('admin_info');
   location.reload();
 }
 
 function showMain() {
-  document.getElementById('login-view').classList.add('hidden');
-  document.getElementById('main-view').classList.remove('hidden');
-  document.getElementById('sidebar').classList.remove('hidden');
-  if (adminInfo) document.getElementById('admin-display').textContent = adminInfo.display_name || adminInfo.username;
-  loadDashboard();
+  document.getElementById('loginPage').classList.add('hidden');
+  document.getElementById('mainPage').classList.remove('hidden');
+  document.getElementById('sidebarSiteName').textContent = siteName;
+  if (adminInfo) {
+    var name = adminInfo.display_name || adminInfo.username;
+    document.getElementById('adminDisplayName').textContent = name;
+    document.getElementById('drawerAdminName').textContent  = name;
+  }
+  switchPage('dashboard');
 }
 
-// ============ ナビゲーション ============
-function showSection(name) {
-  document.querySelectorAll('section[id^="section-"]').forEach(el => el.classList.add('section-hidden'));
-  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
-  document.getElementById('section-' + name).classList.remove('section-hidden');
-  document.getElementById('nav-' + name)?.classList.add('active');
-  const titles = {dashboard:'ダッシュボード',orders:'受注管理',products:'商品マスタ',stores:'発注元マスタ',notices:'お知らせ管理',email:'メール設定',settings:'システム設定'};
-  document.getElementById('section-title').textContent = titles[name] || name;
-  currentSection = name;
-  document.getElementById('sidebar').classList.remove('open');
+// ============ ページ切替 ============
+var pageNames = {dashboard:'ダッシュボード',orders:'受注管理',products:'商品マスタ',stores:'発注元マスタ',notices:'お知らせ管理',email:'メール設定',settings:'システム設定'};
+function switchPage(page) {
+  closeDrawer();
+  currentPage = page;
+  document.querySelectorAll('.page-section').forEach(function(el){ el.classList.remove('active'); });
+  var sec = document.getElementById('page-'+page);
+  if (sec) { sec.classList.add('active'); }
+  document.querySelectorAll('.nav-item[data-page]').forEach(function(el){
+    el.classList.toggle('active', el.dataset.page === page);
+  });
+  var t = pageNames[page] || page;
+  document.getElementById('pageTitle').textContent        = t;
+  document.getElementById('pageTitleDesktop').textContent = t;
 
-  if (name === 'orders') loadOrders();
-  if (name === 'products') loadProducts();
-  if (name === 'stores') loadStores();
-  if (name === 'notices') loadNoticesAdmin();
-  if (name === 'email') loadEmailSettings();
-  if (name === 'settings') loadSettings();
+  if (page==='dashboard') loadDashboard();
+  else if (page==='orders')   loadOrders();
+  else if (page==='products') loadProducts();
+  else if (page==='stores')   loadStores();
+  else if (page==='notices')  loadNoticesAdmin();
+  else if (page==='email')    loadEmailSettings();
+  else if (page==='settings') loadSettings();
 }
 
-function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
+function filterOrderStatus(status) {
+  document.getElementById('orderStatusFilter').value = status;
+  loadOrders();
 }
+
+// ============ ドロワー ============
+function openDrawer()  { document.getElementById('drawerMenu').classList.add('open'); document.getElementById('drawerOverlay').classList.add('open'); }
+function closeDrawer() { document.getElementById('drawerMenu').classList.remove('open'); document.getElementById('drawerOverlay').classList.remove('open'); }
 
 // ============ API ============
-async function apiFetch(url, opts = {}) {
-  const headers = {'Content-Type':'application/json', ...opts.headers};
-  if (adminToken) headers['Authorization'] = 'Bearer ' + adminToken;
-  const res = await fetch(url, {...opts, headers});
-  if (res.status === 401) { logout(); throw new Error('Unauthorized'); }
+async function apiFetch(url, opts) {
+  opts = opts || {};
+  var h = {'Content-Type':'application/json'};
+  if (opts.headers) Object.assign(h, opts.headers);
+  if (adminToken) h['Authorization'] = 'Bearer ' + adminToken;
+  var res = await fetch(url, Object.assign({}, opts, {headers:h}));
+  if (res.status === 401) { doLogout(); throw new Error('Unauthorized'); }
   return res;
 }
 
 // ============ ダッシュボード ============
 async function loadDashboard() {
   try {
-    const res = await apiFetch('/api/admin/stats');
-    const data = await res.json();
-    document.getElementById('stat-pending').textContent = data.orders.pending;
-    document.getElementById('stat-preparing').textContent = data.orders.preparing;
-    document.getElementById('stat-shipped').textContent = data.orders.shipped;
-    document.getElementById('stat-products').textContent = data.products;
-
-    const res2 = await apiFetch('/api/admin/orders?status=pending');
-    const data2 = await res2.json();
-    const recent = (data2.orders || []).slice(0,5);
-    const el = document.getElementById('recent-orders');
-    if (recent.length === 0) { el.innerHTML = '<p class="text-gray-400 text-sm">未確認の発注はありません</p>'; return; }
-    el.innerHTML = recent.map(o => \`
-      <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-blue-50" onclick="showSection('orders');setTimeout(()=>showOrderDetail(\${o.id}),300)">
-        <div>
-          <p class="font-bold text-sm text-blue-700">\${o.order_no}</p>
-          <p class="text-xs text-gray-500">\${o.store_name} \${o.section_name||''}</p>
-        </div>
-        <span class="badge status-badge-\${o.status}">\${statusLabel[o.status]||o.status}</span>
-      </div>
-    \`).join('');
-  } catch {}
+    var res = await apiFetch('/api/admin/stats');
+    var d   = await res.json();
+    document.getElementById('statPending').textContent  = d.orders.pending;
+    document.getElementById('statPreparing').textContent= d.orders.preparing;
+    document.getElementById('statShipped').textContent  = d.orders.shipped;
+    document.getElementById('statProducts').textContent = d.products;
+    var res2 = await apiFetch('/api/admin/orders?status=pending');
+    var d2   = await res2.json();
+    var recent = (d2.orders||[]).slice(0,5);
+    var el = document.getElementById('recentOrders');
+    if (recent.length===0){ el.innerHTML='<p class="text-gray-400 text-sm py-4 text-center">未確認の発注はありません</p>'; return; }
+    el.innerHTML = '<div class="space-y-2">' + recent.map(function(o){
+      return '<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-green-50 transition-colors" onclick="switchPage(\'orders\');setTimeout(function(){showOrderDetail('+o.id+')},300)">'
+        + '<div><p class="font-bold text-sm" style="color:#3d6444">'+o.order_no+'</p>'
+        + '<p class="text-xs text-gray-500">'+o.store_name+(o.section_name?' / '+o.section_name:'')+'</p></div>'
+        + '<span class="sbadge s-pending">未確認</span>'
+        + '</div>';
+    }).join('') + '</div>';
+  } catch(e) {}
 }
 
 // ============ 受注管理 ============
-const statusLabel = {pending:'未確認',confirmed:'受注確認済',preparing:'出荷準備中',inspecting:'検品中',shipped:'出荷完了',cancelled:'キャンセル'};
+var statusLabel = {pending:'未確認',confirmed:'受注確認済',preparing:'出荷準備中',inspecting:'検品中',shipped:'出荷完了',cancelled:'キャンセル'};
+var statusCls   = {pending:'s-pending',confirmed:'s-confirmed',preparing:'s-preparing',inspecting:'s-inspecting',shipped:'s-shipped',cancelled:'s-cancelled'};
 
 async function loadOrders() {
-  const search = document.getElementById('order-search')?.value || '';
-  const status = document.getElementById('order-status-filter')?.value || '';
-  let url = '/api/admin/orders?';
-  if (search) url += 'search=' + encodeURIComponent(search) + '&';
-  if (status) url += 'status=' + status;
-
-  const res = await apiFetch(url);
-  const data = await res.json();
-  const tbody = document.getElementById('orders-tbody');
-  if (!data.orders || data.orders.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-400">発注はありません</td></tr>';
-    return;
-  }
-  tbody.innerHTML = data.orders.map(o => \`
-    <tr>
-      <td><span class="font-bold text-blue-700 cursor-pointer hover:underline" onclick="showOrderDetail(\${o.id})">\${o.order_no}</span></td>
-      <td>\${o.store_name}<br><span class="text-xs text-gray-400">\${o.section_name||''}</span></td>
-      <td>\${o.orderer_name||'-'}</td>
-      <td>\${o.desired_delivery_date||'-'}</td>
-      <td><span class="badge status-badge-\${o.status}">\${statusLabel[o.status]||o.status}</span></td>
-      <td class="text-xs text-gray-500">\${formatDate(o.created_at)}</td>
-      <td>
-        <select class="text-xs border rounded p-1" onchange="updateStatus(\${o.id}, this.value)">
-          \${['pending','confirmed','preparing','inspecting','shipped','cancelled'].map(s => \`<option value="\${s}" \${s===o.status?'selected':''}>\${statusLabel[s]}</option>\`).join('')}
-        </select>
-        <button onclick="showOrderDetail(\${o.id})" class="text-blue-500 hover:text-blue-700 ml-2 text-xs"><i class="fas fa-eye"></i></button>
-      </td>
-    </tr>
-  \`).join('');
+  var search = document.getElementById('orderSearch')?.value||'';
+  var status = document.getElementById('orderStatusFilter')?.value||'';
+  var url = '/api/admin/orders?';
+  if (search) url += 'search='+encodeURIComponent(search)+'&';
+  if (status) url += 'status='+status;
+  var res  = await apiFetch(url);
+  var data = await res.json();
+  var tbody = document.getElementById('ordersTbody');
+  var orders = data.orders||[];
+  if (orders.length===0){ tbody.innerHTML='<tr><td colspan="7" class="text-center py-8 text-gray-400">発注はありません</td></tr>'; return; }
+  tbody.innerHTML = orders.map(function(o){
+    return '<tr>'
+      +'<td><span class="font-bold cursor-pointer hover:underline" style="color:#3d6444" onclick="showOrderDetail('+o.id+')">'+o.order_no+'</span></td>'
+      +'<td>'+o.store_name+'<br><span class="text-xs text-gray-400">'+(o.section_name||'')+'</span></td>'
+      +'<td>'+(o.orderer_name||'-')+'</td>'
+      +'<td>'+(o.desired_delivery_date||'-')+'</td>'
+      +'<td><span class="sbadge '+(statusCls[o.status]||'')+'">'+( statusLabel[o.status]||o.status)+'</span></td>'
+      +'<td class="text-xs text-gray-500">'+fmtDate(o.created_at)+'</td>'
+      +'<td class="flex items-center gap-2 py-2">'
+      +'<select class="form-select text-xs py-1 px-2 w-auto" style="width:auto" onchange="updateStatus('+o.id+',this.value)">'
+      +['pending','confirmed','preparing','inspecting','shipped','cancelled'].map(function(s){ return '<option value="'+s+'"'+(s===o.status?' selected':'')+'>'+statusLabel[s]+'</option>'; }).join('')
+      +'</select>'
+      +'<button onclick="showOrderDetail('+o.id+')" class="text-green-600 hover:text-green-800 text-sm"><i class="fas fa-eye"></i></button>'
+      +'</td></tr>';
+  }).join('');
 }
 
-async function updateStatus(orderId, status) {
-  const res = await apiFetch(\`/api/admin/orders/\${orderId}/status\`, {
-    method: 'PUT',
-    body: JSON.stringify({status}),
-  });
-  if (res.ok) showToast('ステータスを更新しました');
-  else showToast('更新に失敗しました', 'error');
+async function updateStatus(id, status) {
+  var res = await apiFetch('/api/admin/orders/'+id+'/status', {method:'PUT', body:JSON.stringify({status:status})});
+  if (res.ok) showToast('ステータスを更新しました'); else showToast('更新に失敗しました','error');
   loadOrders();
 }
 
 async function showOrderDetail(id) {
-  const res = await apiFetch(\`/api/admin/orders/\${id}\`);
-  const {order, items, inspections} = await res.json();
-  const content = document.getElementById('order-modal-content');
-  
-  const inspectedBarcodes = new Set((inspections||[]).filter(i => i.is_match).map(i => i.barcode_scanned));
-  
-  content.innerHTML = \`
-    <div class="space-y-4">
-      <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-        <div><span class="text-gray-500 text-xs">発注番号</span><p class="font-bold text-blue-700">\${order.order_no}</p></div>
-        <div><span class="text-gray-500 text-xs">ステータス</span>
-          <div class="mt-1">
-            <select class="text-xs border rounded p-1" onchange="updateStatus(\${order.id},this.value);document.getElementById('order-modal').classList.add('hidden')">
-              \${['pending','confirmed','preparing','inspecting','shipped','cancelled'].map(s => \`<option value="\${s}" \${s===order.status?'selected':''}>\${statusLabel[s]}</option>\`).join('')}
-            </select>
-          </div>
-        </div>
-        <div><span class="text-gray-500 text-xs">発注日時</span><p>\${formatDate(order.created_at)}</p></div>
-        <div><span class="text-gray-500 text-xs">店舗/部署</span><p>\${order.store_name} \${order.section_name||''}</p></div>
-        <div><span class="text-gray-500 text-xs">担当者</span><p>\${order.orderer_name||'-'}</p></div>
-        <div><span class="text-gray-500 text-xs">納品希望日</span><p>\${order.desired_delivery_date||'-'}</p></div>
-        \${order.worker_name ? \`<div><span class="text-gray-500 text-xs">作業者</span><p>\${order.worker_name}</p></div>\` : ''}
-      </div>
-      \${order.note ? \`<div class="bg-gray-50 p-3 rounded-lg text-sm"><p class="text-gray-500 text-xs mb-1">備考</p><p>\${order.note}</p></div>\` : ''}
-      
-      <h3 class="font-bold text-gray-800">発注明細</h3>
-      <div class="overflow-x-auto">
-        <table class="text-sm">
-          <thead><tr><th>商品名</th><th>ブランド</th><th>商品コード</th><th>バーコード</th><th>数量</th><th>検品</th></tr></thead>
-          <tbody>\${items.map(i => \`
-            <tr>
-              <td>\${i.product_name}</td>
-              <td class="text-gray-500">\${i.brand||'-'}</td>
-              <td class="text-xs text-gray-400">\${i.product_code||'-'}</td>
-              <td class="text-xs text-gray-400 font-mono">\${i.barcode||'-'}</td>
-              <td class="font-bold text-right">\${i.quantity}\${i.unit||''}</td>
-              <td class="text-center">\${i.barcode && inspectedBarcodes.has(i.barcode) ? '<i class="fas fa-check-circle text-green-500"></i>' : '<i class="fas fa-circle text-gray-200"></i>'}</td>
-            </tr>
-          \`).join('')}</tbody>
-        </table>
-      </div>
-      
-      <div class="flex flex-wrap gap-3 mt-4">
-        <button onclick="printOrder(\${order.id})" class="btn-secondary text-sm"><i class="fas fa-print mr-1"></i>印刷</button>
-        <button onclick="goInspection(\${order.id})" class="btn-primary text-sm"><i class="fas fa-barcode mr-1"></i>検品する</button>
-      </div>
-    </div>
-  \`;
-  document.getElementById('order-modal').classList.remove('hidden');
+  var res = await apiFetch('/api/admin/orders/'+id);
+  var d = await res.json();
+  var order=d.order, items=d.items, inspections=d.inspections||[];
+  var inspectedBarcodes = new Set(inspections.filter(function(i){return i.is_match;}).map(function(i){return i.barcode_scanned;}));
+  document.getElementById('orderModalContent').innerHTML =
+    '<div class="space-y-4">'
+    +'<div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">'
+    +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">発注番号</p><p class="font-bold" style="color:#3d6444">'+order.order_no+'</p></div>'
+    +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">ステータス</p>'
+    +'<select class="form-select text-xs py-1 px-2" onchange="updateStatus('+order.id+',this.value);closeModal(\'orderModal\')">'
+    +['pending','confirmed','preparing','inspecting','shipped','cancelled'].map(function(s){ return '<option value="'+s+'"'+(s===order.status?' selected':'')+'>'+statusLabel[s]+'</option>'; }).join('')
+    +'</select></div>'
+    +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">発注日時</p><p>'+fmtDate(order.created_at)+'</p></div>'
+    +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">店舗/部署</p><p>'+order.store_name+(order.section_name?' / '+order.section_name:'')+'</p></div>'
+    +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">担当者</p><p>'+(order.orderer_name||'-')+'</p></div>'
+    +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">納品希望日</p><p>'+(order.desired_delivery_date||'-')+'</p></div>'
+    +(order.worker_name?'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">作業者</p><p>'+order.worker_name+'</p></div>':'')
+    +'</div>'
+    +(order.note?'<div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm"><p class="text-xs text-amber-600 mb-1 font-semibold">備考</p><p>'+order.note+'</p></div>':'')
+    +'<div class="sec-title mt-2"><i class="fas fa-list text-green-600"></i> 発注明細</div>'
+    +'<div class="overflow-x-auto"><table class="w-full text-sm"><thead class="tbl-header"><tr><th>商品名</th><th>ブランド</th><th>コード</th><th>バーコード</th><th>数量</th><th>検品</th></tr></thead><tbody>'
+    +items.map(function(i){
+      var matched = i.barcode && inspectedBarcodes.has(i.barcode);
+      return '<tr><td>'+i.product_name+'</td><td class="text-gray-500">'+(i.brand||'-')+'</td>'
+        +'<td class="text-xs text-gray-400 font-mono">'+(i.product_code||'-')+'</td>'
+        +'<td class="text-xs text-gray-400 font-mono">'+(i.barcode||'-')+'</td>'
+        +'<td class="font-bold text-right" style="color:#3d6444">'+i.quantity+(i.unit||'')+'</td>'
+        +'<td class="text-center">'+(matched?'<i class="fas fa-check-circle text-green-500"></i>':'<i class="far fa-circle text-gray-300"></i>')+'</td></tr>';
+    }).join('')
+    +'</tbody></table></div>'
+    +'<div class="flex flex-wrap gap-3 mt-2">'
+    +'<button onclick="printOrder('+order.id+')" class="btn-s text-sm"><i class="fas fa-print mr-1"></i>印刷</button>'
+    +'<button onclick="goInspection('+order.id+')" class="btn-p text-sm"><i class="fas fa-barcode mr-1"></i>検品する</button>'
+    +'</div></div>';
+  document.getElementById('orderModal').classList.remove('hidden');
 }
 
-function printOrder(id) {
-  apiFetch(\`/api/admin/orders/\${id}/printed\`, {method:'PUT'});
-  window.print();
-}
-
-function goInspection(orderId) {
-  closeModal('order-modal');
-  window.location.href = '/admin/inspection/' + orderId;
-}
+function printOrder(id) { apiFetch('/api/admin/orders/'+id+'/printed',{method:'PUT'}); window.print(); }
+function goInspection(id) { closeModal('orderModal'); window.location.href='/admin/inspection/'+id; }
 
 // ============ 商品マスタ ============
 async function loadProducts() {
-  const search = document.getElementById('product-search-admin')?.value || '';
-  const res = await apiFetch('/api/admin/products' + (search ? '?search=' + encodeURIComponent(search) : ''));
-  const data = await res.json();
-  const tbody = document.getElementById('products-tbody');
-  if (!data.products || data.products.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-gray-400">商品がありません</td></tr>';
-    return;
-  }
-  tbody.innerHTML = data.products.map(p => \`
-    <tr>
-      <td><span class="badge bg-blue-50 text-blue-700">\${p.category||'-'}</span></td>
-      <td class="text-gray-500">\${p.brand||'-'}</td>
-      <td class="font-medium">\${p.product_name} \${p.is_new?'<span class="badge bg-red-50 text-red-600 ml-1">NEW</span>':''}</td>
-      <td class="text-xs text-gray-400 font-mono">\${p.product_code||'-'}</td>
-      <td class="text-xs text-gray-400 font-mono">\${p.barcode||'-'}</td>
-      <td>\${p.unit||'個'}</td>
-      <td><span class="badge \${p.is_active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}">\${p.is_active ? '有効' : '無効'}</span></td>
-      <td>
-        <button onclick="openProductModal(\${p.id})" class="text-blue-500 hover:text-blue-700 mr-2 text-sm"><i class="fas fa-edit"></i></button>
-        <button onclick="deleteProduct(\${p.id})" class="text-red-400 hover:text-red-600 text-sm"><i class="fas fa-trash"></i></button>
-      </td>
-    </tr>
-  \`).join('');
+  var search = document.getElementById('productSearchAdmin')?.value||'';
+  var url = '/api/admin/products'+(search?'?search='+encodeURIComponent(search):'');
+  var res  = await apiFetch(url);
+  var data = await res.json();
+  var tbody = document.getElementById('productsTbody');
+  var prods = data.products||[];
+  if (prods.length===0){ tbody.innerHTML='<tr><td colspan="8" class="text-center py-8 text-gray-400">商品がありません</td></tr>'; return; }
+  tbody.innerHTML = prods.map(function(p){
+    return '<tr>'
+      +'<td><span class="sbadge" style="background:#e8f5e9;color:#2e7d32">'+(p.category||'-')+'</span></td>'
+      +'<td class="text-gray-500 text-xs">'+(p.brand||'-')+'</td>'
+      +'<td class="font-medium">'+(p.is_new?'<span class="new-badge">NEW</span>':'')+' '+p.product_name+'</td>'
+      +'<td class="text-xs text-gray-400 font-mono">'+(p.product_code||'-')+'</td>'
+      +'<td class="text-xs text-gray-400 font-mono">'+(p.barcode||'-')+'</td>'
+      +'<td>'+(p.unit||'個')+'</td>'
+      +'<td><span class="sbadge '+(p.is_active?'s-shipped':'s-cancelled')+'">'+(p.is_active?'有効':'無効')+'</span></td>'
+      +'<td class="flex items-center gap-2">'
+      +'<button onclick="openProductModal('+p.id+')" class="text-xs btn-s py-1 px-2"><i class="fas fa-edit mr-1"></i>編集</button>'
+      +'<button onclick="deleteProduct('+p.id+')" class="btn-d"><i class="fas fa-trash"></i></button>'
+      +'</td></tr>';
+  }).join('');
 }
 
-async function openProductModal(id = null) {
-  document.getElementById('product-modal-title').textContent = id ? '商品編集' : '商品追加';
-  document.getElementById('product-id').value = id || '';
+async function openProductModal(id) {
+  id = id || null;
+  document.getElementById('productModalTitle').textContent = id ? '商品編集' : '商品追加';
+  document.getElementById('productId').value = id||'';
   if (id) {
-    const res = await apiFetch('/api/admin/products');
-    const data = await res.json();
-    const p = data.products.find(x => x.id === id);
+    var res=await apiFetch('/api/admin/products'); var data=await res.json();
+    var p=data.products.find(function(x){return x.id===id;});
     if (p) {
-      document.getElementById('p-category').value = p.category || '';
-      document.getElementById('p-brand').value = p.brand || '';
-      document.getElementById('p-name').value = p.product_name || '';
-      document.getElementById('p-code').value = p.product_code || '';
-      document.getElementById('p-barcode').value = p.barcode || '';
-      document.getElementById('p-unit').value = p.unit || '個';
-      document.getElementById('p-is-active').checked = !!p.is_active;
-      document.getElementById('p-is-new').checked = !!p.is_new;
+      document.getElementById('pCategory').value=p.category||'';
+      document.getElementById('pBrand').value=p.brand||'';
+      document.getElementById('pName').value=p.product_name||'';
+      document.getElementById('pCode').value=p.product_code||'';
+      document.getElementById('pBarcode').value=p.barcode||'';
+      document.getElementById('pUnit').value=p.unit||'個';
+      document.getElementById('pIsActive').checked=!!p.is_active;
+      document.getElementById('pIsNew').checked=!!p.is_new;
     }
   } else {
-    document.getElementById('product-form').reset();
-    document.getElementById('p-unit').value = '個';
-    document.getElementById('p-is-active').checked = true;
+    document.getElementById('productForm').reset();
+    document.getElementById('pUnit').value='個';
+    document.getElementById('pIsActive').checked=true;
   }
-  document.getElementById('product-modal').classList.remove('hidden');
+  document.getElementById('productModal').classList.remove('hidden');
 }
 
-document.getElementById('product-form').addEventListener('submit', async (e) => {
+async function saveProduct(e) {
   e.preventDefault();
-  const id = document.getElementById('product-id').value;
-  const body = {
-    category: document.getElementById('p-category').value,
-    brand: document.getElementById('p-brand').value,
-    product_name: document.getElementById('p-name').value,
-    product_code: document.getElementById('p-code').value,
-    barcode: document.getElementById('p-barcode').value,
-    unit: document.getElementById('p-unit').value || '個',
-    is_active: document.getElementById('p-is-active').checked ? 1 : 0,
-    is_new: document.getElementById('p-is-new').checked ? 1 : 0,
-  };
-  const url = id ? \`/api/admin/products/\${id}\` : '/api/admin/products';
-  const method = id ? 'PUT' : 'POST';
-  const res = await apiFetch(url, {method, body: JSON.stringify(body)});
-  if (res.ok) { showToast(id ? '商品を更新しました' : '商品を追加しました'); closeModal('product-modal'); loadProducts(); }
-  else showToast('保存に失敗しました', 'error');
-});
+  var id=document.getElementById('productId').value;
+  var body={category:document.getElementById('pCategory').value,brand:document.getElementById('pBrand').value,
+    product_name:document.getElementById('pName').value,product_code:document.getElementById('pCode').value,
+    barcode:document.getElementById('pBarcode').value,unit:document.getElementById('pUnit').value||'個',
+    is_active:document.getElementById('pIsActive').checked?1:0,is_new:document.getElementById('pIsNew').checked?1:0};
+  var url=id?'/api/admin/products/'+id:'/api/admin/products';
+  var res=await apiFetch(url,{method:id?'PUT':'POST',body:JSON.stringify(body)});
+  if(res.ok){showToast(id?'商品を更新しました':'商品を追加しました');closeModal('productModal');loadProducts();}
+  else showToast('保存に失敗しました','error');
+}
 
 async function deleteProduct(id) {
   if (!confirm('この商品を無効にしますか？')) return;
-  await apiFetch(\`/api/admin/products/\${id}\`, {method:'DELETE'});
+  await apiFetch('/api/admin/products/'+id,{method:'DELETE'});
   showToast('商品を無効にしました'); loadProducts();
 }
 
-function openImportModal() {
-  document.getElementById('csv-input').value = '';
-  document.getElementById('import-modal').classList.remove('hidden');
-}
+function openImportModal() { document.getElementById('csvInput').value=''; document.getElementById('importModal').classList.remove('hidden'); }
 
 async function importCSV() {
-  const csv = document.getElementById('csv-input').value.trim();
-  if (!csv) return;
-  const lines = csv.split('\\n').filter(l => l.trim());
-  const headers = lines[0].split(',').map(h => h.trim());
-  const rows = lines.slice(1).map(line => {
-    const vals = line.split(',').map(v => v.trim());
-    const obj = {};
-    headers.forEach((h, i) => obj[h] = vals[i] || '');
+  var csv=document.getElementById('csvInput').value.trim();
+  if(!csv) return;
+  var lines=csv.split('\n').filter(function(l){return l.trim();});
+  var headers=lines[0].split(',').map(function(h){return h.trim();});
+  var rows=lines.slice(1).map(function(line){
+    var vals=line.split(',').map(function(v){return v.trim();});
+    var obj={};
+    headers.forEach(function(h,i){obj[h]=vals[i]||'';});
     return obj;
   });
-  const res = await apiFetch('/api/admin/products/import', {method:'POST', body: JSON.stringify({rows})});
-  const data = await res.json();
-  if (res.ok) { showToast(\`\${data.imported}件インポートしました\`); closeModal('import-modal'); loadProducts(); }
-  else showToast('インポートに失敗しました', 'error');
+  var res=await apiFetch('/api/admin/products/import',{method:'POST',body:JSON.stringify({rows:rows})});
+  var data=await res.json();
+  if(res.ok){showToast(data.imported+'件インポートしました');closeModal('importModal');loadProducts();}
+  else showToast('インポートに失敗しました','error');
 }
 
 // ============ 発注元マスタ ============
 async function loadStores() {
-  const res = await apiFetch('/api/admin/stores');
-  const data = await res.json();
-  const tbody = document.getElementById('stores-tbody');
-  if (!data.stores || data.stores.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">発注元がありません</td></tr>';
-    return;
-  }
-  tbody.innerHTML = data.stores.map(s => \`
-    <tr>
-      <td class="font-medium">\${s.store_name}</td>
-      <td class="text-gray-500">\${s.section_name||'-'}</td>
-      <td class="text-gray-500">\${s.phone||'-'}</td>
-      <td class="font-mono text-sm text-blue-600">\${s.login_id}</td>
-      <td>\${s.is_test ? '<span class="badge bg-yellow-100 text-yellow-700">テスト</span>' : ''}</td>
-      <td>
-        <button onclick="openStoreModal(\${s.id})" class="text-blue-500 hover:text-blue-700 mr-2 text-sm"><i class="fas fa-edit"></i></button>
-        <button onclick="deleteStore(\${s.id})" class="text-red-400 hover:text-red-600 text-sm"><i class="fas fa-trash"></i></button>
-      </td>
-    </tr>
-  \`).join('');
+  var res=await apiFetch('/api/admin/stores');
+  var data=await res.json();
+  var tbody=document.getElementById('storesTbody');
+  var stores=data.stores||[];
+  if(stores.length===0){tbody.innerHTML='<tr><td colspan="6" class="text-center py-8 text-gray-400">発注元がありません</td></tr>';return;}
+  tbody.innerHTML=stores.map(function(s){
+    return '<tr>'
+      +'<td class="font-medium">'+s.store_name+'</td>'
+      +'<td class="text-gray-500">'+(s.section_name||'-')+'</td>'
+      +'<td class="text-gray-500">'+(s.phone||'-')+'</td>'
+      +'<td class="font-mono text-sm" style="color:#3d6444">'+s.login_id+'</td>'
+      +'<td>'+(s.is_test?'<span class="sbadge" style="background:#fef3c7;color:#b45309">テスト</span>':'')+'</td>'
+      +'<td class="flex items-center gap-2">'
+      +'<button onclick="openStoreModal('+s.id+')" class="text-xs btn-s py-1 px-2"><i class="fas fa-edit mr-1"></i>編集</button>'
+      +'<button onclick="deleteStore('+s.id+')" class="btn-d"><i class="fas fa-trash"></i></button>'
+      +'</td></tr>';
+  }).join('');
 }
 
-let allStores = [];
-async function openStoreModal(id = null) {
-  document.getElementById('store-modal-title').textContent = id ? '発注元編集' : '発注元追加';
-  document.getElementById('store-id').value = id || '';
-  const pwNote = document.getElementById('s-pw-note');
-  const pwReq = document.getElementById('s-pw-required');
+async function openStoreModal(id) {
+  id = id || null;
+  document.getElementById('storeModalTitle').textContent = id?'発注元編集':'発注元追加';
+  document.getElementById('storeId').value = id||'';
+  document.getElementById('sPwNote').classList.toggle('hidden',!id);
+  document.getElementById('sPwReq').classList.toggle('hidden',!!id);
   if (id) {
-    const res = await apiFetch('/api/admin/stores');
-    const data = await res.json();
-    const s = data.stores.find(x => x.id === id);
-    if (s) {
-      document.getElementById('s-name').value = s.store_name || '';
-      document.getElementById('s-section').value = s.section_name || '';
-      document.getElementById('s-phone').value = s.phone || '';
-      document.getElementById('s-fax').value = s.fax || '';
-      document.getElementById('s-login-id').value = s.login_id || '';
-      document.getElementById('s-password').value = '';
-      document.getElementById('s-is-test').checked = !!s.is_test;
-    }
-    pwNote.classList.remove('hidden');
-    pwReq.classList.add('hidden');
-  } else {
-    document.getElementById('store-form').reset();
-    pwNote.classList.add('hidden');
-    pwReq.classList.remove('hidden');
-  }
-  document.getElementById('store-modal').classList.remove('hidden');
+    var res=await apiFetch('/api/admin/stores'); var data=await res.json();
+    var s=data.stores.find(function(x){return x.id===id;});
+    if(s){document.getElementById('sName').value=s.store_name||'';document.getElementById('sSection').value=s.section_name||'';document.getElementById('sPhone').value=s.phone||'';document.getElementById('sFax').value=s.fax||'';document.getElementById('sLoginId').value=s.login_id||'';document.getElementById('sPassword').value='';document.getElementById('sIsTest').checked=!!s.is_test;}
+  } else { document.getElementById('storeForm').reset(); }
+  document.getElementById('storeModal').classList.remove('hidden');
 }
 
-document.getElementById('store-form').addEventListener('submit', async (e) => {
+async function saveStore(e) {
   e.preventDefault();
-  const id = document.getElementById('store-id').value;
-  const body = {
-    store_name: document.getElementById('s-name').value,
-    section_name: document.getElementById('s-section').value,
-    phone: document.getElementById('s-phone').value,
-    fax: document.getElementById('s-fax').value,
-    login_id: document.getElementById('s-login-id').value,
-    password: document.getElementById('s-password').value,
-    is_test: document.getElementById('s-is-test').checked,
-  };
-  const url = id ? \`/api/admin/stores/\${id}\` : '/api/admin/stores';
-  const method = id ? 'PUT' : 'POST';
-  const res = await apiFetch(url, {method, body: JSON.stringify(body)});
-  if (res.ok) { showToast(id ? '発注元を更新しました' : '発注元を追加しました'); closeModal('store-modal'); loadStores(); }
-  else { const d = await res.json(); showToast(d.error || '保存に失敗しました', 'error'); }
-});
+  var id=document.getElementById('storeId').value;
+  var body={store_name:document.getElementById('sName').value,section_name:document.getElementById('sSection').value,
+    phone:document.getElementById('sPhone').value,fax:document.getElementById('sFax').value,
+    login_id:document.getElementById('sLoginId').value,password:document.getElementById('sPassword').value,
+    is_test:document.getElementById('sIsTest').checked};
+  var res=await apiFetch(id?'/api/admin/stores/'+id:'/api/admin/stores',{method:id?'PUT':'POST',body:JSON.stringify(body)});
+  if(res.ok){showToast(id?'発注元を更新しました':'発注元を追加しました');closeModal('storeModal');loadStores();}
+  else{var d=await res.json();showToast(d.error||'保存に失敗しました','error');}
+}
 
 async function deleteStore(id) {
-  if (!confirm('この発注元を削除しますか？発注履歴は残ります。')) return;
-  await apiFetch(\`/api/admin/stores/\${id}\`, {method:'DELETE'});
-  showToast('削除しました'); loadStores();
+  if(!confirm('この発注元を削除しますか？'))return;
+  await apiFetch('/api/admin/stores/'+id,{method:'DELETE'});
+  showToast('削除しました');loadStores();
 }
 
 // ============ お知らせ管理 ============
+var allNoticesAdmin = [];
 async function loadNoticesAdmin() {
-  const res = await apiFetch('/api/admin/notices');
-  const data = await res.json();
-  const tbody = document.getElementById('notices-tbody');
-  const typeLabel = {general:'一般',important:'重要',info:'情報'};
-  const typeBadge = {general:'bg-blue-50 text-blue-700',important:'bg-red-50 text-red-700',info:'bg-green-50 text-green-700'};
-  if (!data.notices || data.notices.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-400">お知らせがありません</td></tr>';
-    return;
-  }
-  tbody.innerHTML = data.notices.map(n => \`
-    <tr>
-      <td class="font-medium">\${n.title}</td>
-      <td><span class="badge \${typeBadge[n.notice_type]||typeBadge.general}">\${typeLabel[n.notice_type]||n.notice_type}</span></td>
-      <td class="text-xs text-gray-400">\${n.expire_at ? formatDate(n.expire_at) : '無期限'}</td>
-      <td class="text-xs text-gray-400">\${formatDate(n.created_at)}</td>
-      <td>
-        <button onclick="openNoticeModal(\${n.id})" class="text-blue-500 hover:text-blue-700 mr-2 text-sm"><i class="fas fa-edit"></i></button>
-        <button onclick="deleteNotice(\${n.id})" class="text-red-400 hover:text-red-600 text-sm"><i class="fas fa-trash"></i></button>
-      </td>
-    </tr>
-  \`).join('');
+  var res=await apiFetch('/api/admin/notices'); var data=await res.json();
+  allNoticesAdmin = data.notices||[];
+  var tbody=document.getElementById('noticesTbody');
+  var typeLabel={general:'一般',important:'重要',info:'情報'};
+  var typeBg={general:'background:#dbeafe;color:#1e40af',important:'background:#fee2e2;color:#991b1b',info:'background:#d1fae5;color:#065f46'};
+  if(allNoticesAdmin.length===0){tbody.innerHTML='<tr><td colspan="5" class="text-center py-8 text-gray-400">お知らせがありません</td></tr>';return;}
+  tbody.innerHTML=allNoticesAdmin.map(function(n){
+    return '<tr>'
+      +'<td class="font-medium">'+n.title+'</td>'
+      +'<td><span class="sbadge" style="'+(typeBg[n.notice_type]||typeBg.general)+'">'+(typeLabel[n.notice_type]||n.notice_type)+'</span></td>'
+      +'<td class="text-xs text-gray-400">'+(n.expire_at?fmtDate(n.expire_at):'無期限')+'</td>'
+      +'<td class="text-xs text-gray-400">'+fmtDate(n.created_at)+'</td>'
+      +'<td class="flex items-center gap-2">'
+      +'<button onclick="openNoticeModal('+n.id+')" class="text-xs btn-s py-1 px-2"><i class="fas fa-edit mr-1"></i>編集</button>'
+      +'<button onclick="deleteNotice('+n.id+')" class="btn-d"><i class="fas fa-trash"></i></button>'
+      +'</td></tr>';
+  }).join('');
 }
 
-let allNotices = [];
-async function openNoticeModal(id = null) {
-  document.getElementById('notice-modal-title').textContent = id ? 'お知らせ編集' : 'お知らせ追加';
-  document.getElementById('notice-id').value = id || '';
-  if (id) {
-    const res = await apiFetch('/api/admin/notices');
-    const data = await res.json();
-    const n = data.notices.find(x => x.id === id);
-    if (n) {
-      document.getElementById('n-title').value = n.title || '';
-      document.getElementById('n-message').value = n.message || '';
-      document.getElementById('n-body').value = n.body || '';
-      document.getElementById('n-type').value = n.notice_type || 'general';
-      document.getElementById('n-expire').value = n.expire_at ? n.expire_at.slice(0,16) : '';
-    }
-  } else {
-    document.getElementById('notice-form').reset();
-  }
-  document.getElementById('notice-modal').classList.remove('hidden');
+async function openNoticeModal(id) {
+  id = id || null;
+  document.getElementById('noticeModalTitle').textContent=id?'お知らせ編集':'お知らせ追加';
+  document.getElementById('noticeId').value=id||'';
+  if(id){
+    var n=allNoticesAdmin.find(function(x){return x.id===id;});
+    if(n){document.getElementById('nTitle').value=n.title||'';document.getElementById('nMessage').value=n.message||'';document.getElementById('nBody').value=n.body||'';document.getElementById('nType').value=n.notice_type||'general';document.getElementById('nExpire').value=n.expire_at?n.expire_at.slice(0,16):'';}
+  } else { document.getElementById('noticeForm').reset(); }
+  document.getElementById('noticeModal').classList.remove('hidden');
 }
 
-document.getElementById('notice-form').addEventListener('submit', async (e) => {
+async function saveNotice(e) {
   e.preventDefault();
-  const id = document.getElementById('notice-id').value;
-  const body = {
-    title: document.getElementById('n-title').value,
-    message: document.getElementById('n-message').value,
-    body: document.getElementById('n-body').value,
-    notice_type: document.getElementById('n-type').value,
-    expire_at: document.getElementById('n-expire').value || null,
-  };
-  const url = id ? \`/api/admin/notices/\${id}\` : '/api/admin/notices';
-  const method = id ? 'PUT' : 'POST';
-  const res = await apiFetch(url, {method, body: JSON.stringify(body)});
-  if (res.ok) { showToast(id ? 'お知らせを更新しました' : 'お知らせを追加しました'); closeModal('notice-modal'); loadNoticesAdmin(); }
-  else showToast('保存に失敗しました', 'error');
-});
+  var id=document.getElementById('noticeId').value;
+  var body={title:document.getElementById('nTitle').value,message:document.getElementById('nMessage').value,body:document.getElementById('nBody').value,notice_type:document.getElementById('nType').value,expire_at:document.getElementById('nExpire').value||null};
+  var res=await apiFetch(id?'/api/admin/notices/'+id:'/api/admin/notices',{method:id?'PUT':'POST',body:JSON.stringify(body)});
+  if(res.ok){showToast(id?'お知らせを更新しました':'お知らせを追加しました');closeModal('noticeModal');loadNoticesAdmin();}
+  else showToast('保存に失敗しました','error');
+}
 
 async function deleteNotice(id) {
-  if (!confirm('このお知らせを削除しますか？')) return;
-  await apiFetch(\`/api/admin/notices/\${id}\`, {method:'DELETE'});
-  showToast('削除しました'); loadNoticesAdmin();
+  if(!confirm('このお知らせを削除しますか？'))return;
+  await apiFetch('/api/admin/notices/'+id,{method:'DELETE'});
+  showToast('削除しました');loadNoticesAdmin();
 }
 
 // ============ メール設定 ============
 async function loadEmailSettings() {
-  const res = await apiFetch('/api/admin/email-settings');
-  const data = await res.json();
-  if (data.settings) {
-    document.getElementById('main-email').value = data.settings.main_email || '';
-    document.getElementById('sub-email').value = data.settings.sub_email || '';
-    document.getElementById('resend-api-key').value = data.settings.resend_api_key || '';
-  }
+  var res=await apiFetch('/api/admin/email-settings'); var d=await res.json();
+  if(d.settings){document.getElementById('mainEmail').value=d.settings.main_email||'';document.getElementById('subEmail').value=d.settings.sub_email||'';document.getElementById('resendApiKey').value=d.settings.resend_api_key||'';}
 }
-
 async function saveEmailSettings() {
-  const body = {
-    main_email: document.getElementById('main-email').value,
-    sub_email: document.getElementById('sub-email').value,
-    resend_api_key: document.getElementById('resend-api-key').value,
-  };
-  const res = await apiFetch('/api/admin/email-settings', {method:'PUT', body: JSON.stringify(body)});
-  if (res.ok) showToast('メール設定を保存しました');
-  else showToast('保存に失敗しました', 'error');
+  var res=await apiFetch('/api/admin/email-settings',{method:'PUT',body:JSON.stringify({main_email:document.getElementById('mainEmail').value,sub_email:document.getElementById('subEmail').value,resend_api_key:document.getElementById('resendApiKey').value})});
+  if(res.ok)showToast('メール設定を保存しました'); else showToast('保存に失敗しました','error');
 }
-
 async function sendTestEmail() {
-  const res = await apiFetch('/api/admin/email-settings/test', {method:'POST'});
-  const data = await res.json();
-  if (res.ok) showToast('テストメールを送信しました');
-  else showToast(data.error || 'テスト送信に失敗しました', 'error');
+  var res=await apiFetch('/api/admin/email-settings/test',{method:'POST'});
+  var d=await res.json();
+  if(res.ok)showToast('テストメールを送信しました'); else showToast(d.error||'テスト送信に失敗しました','error');
 }
 
 // ============ システム設定 ============
 async function loadSettings() {
-  const res = await apiFetch('/api/admin/settings');
-  const data = await res.json();
-  const s = data.settings;
-  document.getElementById('setting-site-name').value = s.site_name || '';
-  document.getElementById('setting-site-description').value = s.site_description || '';
-  const color = s.primary_color || '#2563eb';
-  document.getElementById('setting-primary-color').value = color;
-  document.getElementById('setting-primary-color-hex').value = color;
+  var res=await apiFetch('/api/admin/settings'); var d=await res.json();
+  var s=d.settings;
+  document.getElementById('settingSiteName').value=s.site_name||'';
+  document.getElementById('settingSiteDesc').value=s.site_description||'';
+  var c=s.primary_color||'#5d8464';
+  document.getElementById('settingColor').value=c;
+  document.getElementById('settingColorHex').value=c;
 }
-
-document.getElementById('setting-primary-color').addEventListener('input', (e) => {
-  document.getElementById('setting-primary-color-hex').value = e.target.value;
-  document.documentElement.style.setProperty('--primary', e.target.value);
-});
-
 function syncColor(input) {
-  const val = input.value;
-  if (/^#[0-9a-fA-F]{6}$/.test(val)) {
-    document.getElementById('setting-primary-color').value = val;
-    document.documentElement.style.setProperty('--primary', val);
-  }
+  var val=input.value;
+  if(/^#[0-9a-fA-F]{6}$/.test(val)) document.getElementById('settingColor').value=val;
 }
-
 async function saveSettings() {
-  const body = {
-    site_name: document.getElementById('setting-site-name').value,
-    site_description: document.getElementById('setting-site-description').value,
-    primary_color: document.getElementById('setting-primary-color').value,
-  };
-  const res = await apiFetch('/api/admin/settings', {method:'PUT', body: JSON.stringify(body)});
-  if (res.ok) {
-    showToast('設定を保存しました');
-    document.querySelectorAll('#admin-site-name').forEach(el => el.textContent = body.site_name);
-    document.title = body.site_name + ' - 管理者画面';
-  } else showToast('保存に失敗しました', 'error');
+  var body={site_name:document.getElementById('settingSiteName').value,site_description:document.getElementById('settingSiteDesc').value,primary_color:document.getElementById('settingColor').value};
+  var res=await apiFetch('/api/admin/settings',{method:'PUT',body:JSON.stringify(body)});
+  if(res.ok){showToast('設定を保存しました');document.getElementById('sidebarSiteName').textContent=body.site_name;document.title='管理者画面 | '+body.site_name;}
+  else showToast('保存に失敗しました','error');
 }
-
 async function changePassword() {
-  const current = document.getElementById('current-password').value;
-  const newPw = document.getElementById('new-password').value;
-  const confirm = document.getElementById('confirm-password').value;
-  if (!current || !newPw) { showToast('パスワードを入力してください', 'error'); return; }
-  if (newPw !== confirm) { showToast('新しいパスワードが一致しません', 'error'); return; }
-  const res = await apiFetch('/api/admin/admins/password', {method:'PUT', body: JSON.stringify({current_password:current, new_password:newPw})});
-  const data = await res.json();
-  if (res.ok) { showToast('パスワードを変更しました'); document.getElementById('current-password').value = ''; document.getElementById('new-password').value = ''; document.getElementById('confirm-password').value = ''; }
-  else showToast(data.error || 'パスワード変更に失敗しました', 'error');
+  var cur=document.getElementById('curPw').value, nw=document.getElementById('newPw').value, conf=document.getElementById('confirmPw').value;
+  if(!cur||!nw){showToast('パスワードを入力してください','warn');return;}
+  if(nw!==conf){showToast('新しいパスワードが一致しません','error');return;}
+  var res=await apiFetch('/api/admin/admins/password',{method:'PUT',body:JSON.stringify({current_password:cur,new_password:nw})});
+  var d=await res.json();
+  if(res.ok){showToast('パスワードを変更しました');['curPw','newPw','confirmPw'].forEach(function(id){document.getElementById(id).value='';});}
+  else showToast(d.error||'変更に失敗しました','error');
 }
 
 // ============ ユーティリティ ============
-function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-
-function formatDate(str) {
-  if (!str) return '-';
-  return new Date(str).toLocaleString('ja-JP', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+function closeModal(id){document.getElementById(id).classList.add('hidden');}
+function fmtDate(s){if(!s)return'-';return new Date(s).toLocaleString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});}
+var toastTimer;
+function showToast(msg,type){
+  type=type||'success';
+  var colors={success:'background:linear-gradient(135deg,#5d8464,#3d6444)',error:'background:#dc2626',warn:'background:#d97706'};
+  var icons={success:'fas fa-check-circle',error:'fas fa-times-circle',warn:'fas fa-exclamation-circle'};
+  document.getElementById('toastInner').style.cssText=colors[type]||colors.success;
+  document.getElementById('toastIcon').className=icons[type]||icons.success;
+  document.getElementById('toastMsg').textContent=msg;
+  document.getElementById('toast').classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){document.getElementById('toast').classList.add('hidden');},3500);
 }
 
-function showToast(msg, type = 'success') {
-  const toast = document.getElementById('toast');
-  toast.className = \`fixed bottom-6 right-6 \${type==='error'?'bg-red-600':'bg-green-600'} text-white px-5 py-3 rounded-xl shadow-lg z-[100]\`;
-  document.getElementById('toast-msg').textContent = msg;
-  toast.classList.remove('hidden');
-  setTimeout(() => toast.classList.add('hidden'), 3500);
-}
-
-function toggleInputType(id) {
-  const el = document.getElementById(id);
-  el.type = el.type === 'password' ? 'text' : 'password';
-}
-
-// 起動
 init();
-</script>
+<\/script>
 </body>
 </html>`;
 }
