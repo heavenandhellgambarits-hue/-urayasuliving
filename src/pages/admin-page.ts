@@ -625,7 +625,7 @@ async function loadDashboard() {
     var el = document.getElementById('recentOrders');
     if (recent.length===0){ el.innerHTML='<p class="text-gray-400 text-sm py-4 text-center">未確認の発注はありません</p>'; return; }
     el.innerHTML = '<div class="space-y-2">' + recent.map(function(o){
-      return '<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-green-50 transition-colors" onclick="switchPage(\'orders\');setTimeout(function(){showOrderDetail('+o.id+')},300)">'
+      return '<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-green-50 transition-colors" onclick="goDashboardOrder('+o.id+')" style="cursor:pointer">'
         + '<div><p class="font-bold text-sm" style="color:#3d6444">'+o.order_no+'</p>'
         + '<p class="text-xs text-gray-500">'+o.store_name+(o.section_name?' / '+o.section_name:'')+'</p></div>'
         + '<span class="sbadge s-pending">未確認</span>'
@@ -682,7 +682,7 @@ async function showOrderDetail(id) {
     +'<div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">'
     +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">発注番号</p><p class="font-bold" style="color:#3d6444">'+order.order_no+'</p></div>'
     +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">ステータス</p>'
-    +'<select class="form-select text-xs py-1 px-2" onchange="updateStatus('+order.id+',this.value);closeModal(\'orderModal\')">'
+    +'<select class="form-select text-xs py-1 px-2" onchange="updateStatusAndClose('+order.id+',this.value)">'
     +['pending','confirmed','preparing','inspecting','shipped','cancelled'].map(function(s){ return '<option value="'+s+'"'+(s===order.status?' selected':'')+'>'+statusLabel[s]+'</option>'; }).join('')
     +'</select></div>'
     +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">発注日時</p><p>'+fmtDate(order.created_at)+'</p></div>'
@@ -712,6 +712,8 @@ async function showOrderDetail(id) {
 
 function printOrder(id) { apiFetch('/api/admin/orders/'+id+'/printed',{method:'PUT'}); window.print(); }
 function goInspection(id) { closeModal('orderModal'); window.location.href='/admin/inspection/'+id; }
+function goDashboardOrder(id) { switchPage('orders'); setTimeout(function(){ showOrderDetail(id); }, 300); }
+function updateStatusAndClose(id, status) { updateStatus(id, status); closeModal('orderModal'); }
 
 // ============ 商品マスタ ============
 async function loadProducts() {
@@ -787,7 +789,7 @@ function openImportModal() { document.getElementById('csvInput').value=''; docum
 async function importCSV() {
   var csv=document.getElementById('csvInput').value.trim();
   if(!csv) return;
-  var lines=csv.split('\n').filter(function(l){return l.trim();});
+  var lines=csv.split(String.fromCharCode(10)).filter(function(l){return l.trim();});
   var headers=lines[0].split(',').map(function(h){return h.trim();});
   var rows=lines.slice(1).map(function(line){
     var vals=line.split(',').map(function(v){return v.trim();});

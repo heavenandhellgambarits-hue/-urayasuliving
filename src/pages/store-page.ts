@@ -34,11 +34,11 @@ body{background:linear-gradient(135deg,#fdfbf7 0%,#eef2ec 50%,#e8ede8 100%);min-
 .qty-input:focus{outline:none;border-color:#7a9e7e;box-shadow:0 0 0 3px rgba(122,158,126,.15);}
 .new-badge{background:linear-gradient(135deg,#ff6b6b,#ee5a24);color:#fff;font-size:.65rem;font-weight:700;
   padding:2px 6px;border-radius:6px;margin-left:4px;vertical-align:middle;}
-.product-card{background:rgba(255,255,255,.85);border:1.5px solid rgba(200,215,190,.5);border-radius:12px;
-  padding:14px;transition:all .2s;}
+.product-card{background:rgba(255,255,255,.85);border:1.5px solid rgba(200,215,190,.5);border-radius:10px;
+  padding:10px 14px;transition:all .2s;display:flex;align-items:center;gap:12px;}
 .product-card.selected{border-color:#7a9e7e;background:rgba(240,250,240,.95);
-  box-shadow:0 2px 12px rgba(93,132,100,.18);}
-.product-card:hover{box-shadow:0 2px 10px rgba(93,132,100,.12);border-color:#aac4aa;}
+  box-shadow:0 2px 10px rgba(93,132,100,.15);}
+.product-card:hover{box-shadow:0 2px 8px rgba(93,132,100,.10);border-color:#aac4aa;}
 .notice-accordion{background:linear-gradient(135deg,#fffbf0,#fff8e6);border:1px solid #f0d070;
   border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(240,180,40,.10);}
 .notice-accordion-header{display:flex;align-items:center;justify-content:space-between;
@@ -210,7 +210,7 @@ tr:hover td{background:rgba(93,132,100,.03);}
           </select>
         </div>
       </div>
-      <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4"></div>
+      <div id="productGrid" class="flex flex-col gap-2 mb-4"></div>
       <div id="productEmpty" class="hidden card p-10 text-center text-gray-400">
         <i class="fas fa-box-open text-4xl mb-3 block text-gray-300"></i>
         商品が見つかりません
@@ -281,8 +281,11 @@ tr:hover td{background:rgba(93,132,100,.03);}
       <div class="card p-6">
         <div class="section-title">
           <i class="fas fa-history text-green-600"></i> 発注履歴
-          <button onclick="loadOrders()" class="ml-auto text-xs text-gray-400 hover:text-gray-600 font-normal">
+          <button onclick="loadOrders()" class="ml-2 text-xs text-gray-400 hover:text-gray-600 font-normal">
             <i class="fas fa-sync mr-1"></i>更新
+          </button>
+          <button onclick="showTab('products')" class="ml-auto btn-primary" style="padding:6px 14px;font-size:.8rem;">
+            <i class="fas fa-arrow-left mr-1"></i>商品選択に戻る
           </button>
         </div>
         <div id="historyBody">
@@ -294,7 +297,12 @@ tr:hover td{background:rgba(93,132,100,.03);}
     <!-- お知らせ一覧 -->
     <div id="pageNotices" class="hidden fade-in">
       <div class="card p-6">
-        <div class="section-title"><i class="fas fa-bell text-green-600"></i> お知らせ一覧</div>
+        <div class="section-title">
+          <i class="fas fa-bell text-green-600"></i> お知らせ一覧
+          <button onclick="showTab('products')" class="ml-auto btn-primary" style="padding:6px 14px;font-size:.8rem;">
+            <i class="fas fa-arrow-left mr-1"></i>商品選択に戻る
+          </button>
+        </div>
         <div id="noticesFullBody"></div>
       </div>
     </div>
@@ -518,22 +526,27 @@ function renderProducts(list) {
     var qty = cart[p.id] || 0;
     var sel = qty > 0;
     return '<div class="product-card ' + (sel ? 'selected' : '') + '" id="pc-' + p.id + '">'
-      + '<div class="flex items-start justify-between mb-2">'
-      + '<div class="flex flex-wrap gap-1">'
+      + '<div class="flex-shrink-0 w-8 text-center">'
+      + (sel ? '<i class="fas fa-check-circle text-green-500 text-xl"></i>' : '<i class="far fa-circle text-gray-300 text-xl"></i>')
+      + '</div>'
+      + '<div class="flex-1 min-w-0">'
+      + '<div class="flex items-center gap-1 flex-wrap">'
+      + '<p class="font-bold text-gray-800 text-sm leading-snug">' + p.product_name + '</p>'
       + (p.is_new ? '<span class="new-badge">NEW</span>' : '')
-      + (p.category ? '<span class="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-semibold border border-green-200">'+p.category+'</span>' : '')
       + '</div>'
-      + (sel ? '<i class="fas fa-check-circle text-green-500 text-lg"></i>' : '<i class="far fa-circle text-gray-300 text-lg"></i>')
+      + '<div class="flex items-center gap-2 mt-0.5 flex-wrap">'
+      + (p.brand ? '<span class="text-xs text-gray-500">' + p.brand + '</span>' : '')
+      + (p.category ? '<span class="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 font-semibold border border-green-200">' + p.category + '</span>' : '')
+      + (p.product_code ? '<span class="text-xs text-gray-400 font-mono">' + p.product_code + '</span>' : '')
       + '</div>'
-      + '<p class="font-bold text-gray-800 text-sm leading-snug mb-1">' + p.product_name + '</p>'
-      + (p.brand ? '<p class="text-xs text-gray-500 mb-1">' + p.brand + '</p>' : '')
-      + (p.product_code ? '<p class="text-xs text-gray-400 font-mono mb-2">' + p.product_code + '</p>' : '')
-      + '<div class="flex items-center gap-2 mt-3" onclick="event.stopPropagation()">'
+      + '</div>'
+      + '<div class="flex items-center gap-2 flex-shrink-0" onclick="event.stopPropagation()">'
       + '<button onclick="changeQty(' + p.id + ',-1)" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-green-100 text-gray-600 hover:text-green-700 font-bold flex items-center justify-center transition-colors"><i class="fas fa-minus text-xs"></i></button>'
       + '<input class="qty-input" type="number" min="0" value="' + qty + '" id="qty-' + p.id + '" onchange="setQty(' + p.id + ',parseInt(this.value)||0)">'
       + '<button onclick="changeQty(' + p.id + ',1)" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-green-100 text-gray-600 hover:text-green-700 font-bold flex items-center justify-center transition-colors"><i class="fas fa-plus text-xs"></i></button>'
-      + '<span class="text-xs text-gray-500 ml-1">' + (p.unit||'個') + '</span>'
-      + '</div></div>';
+      + '<span class="text-xs text-gray-400 ml-0.5">' + (p.unit||'個') + '</span>'
+      + '</div>'
+      + '</div>';
   }).join('');
 }
 
