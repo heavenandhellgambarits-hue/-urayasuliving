@@ -31,7 +31,9 @@ export function getAdminPage(): string {
 }
 body{background:linear-gradient(135deg,var(--p-bg1) 0%,var(--p-bg2) 100%);min-height:100vh;
   font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;
-  color:#1f2937;}
+  color:#111827;}
+/* メインコンテンツに白ベース背景を確保 */
+.content-area{background:rgba(255,255,255,.96);min-height:100vh;}
 .card{background:rgba(255,255,255,.88);backdrop-filter:blur(8px);border-radius:14px;
   box-shadow:0 2px 16px rgba(80,110,80,.10),0 1px 4px rgba(0,0,0,.04);border:1px solid var(--p-card-border);}
 .btn-p{background:linear-gradient(135deg,var(--p1),var(--p2));color:#fff;border-radius:9px;
@@ -51,7 +53,7 @@ body{background:linear-gradient(135deg,var(--p-bg1) 0%,var(--p-bg2) 100%);min-he
   padding:8px 18px;font-weight:700;transition:all .2s;border:none;cursor:pointer;font-size:.875rem;}
 .btn-warn:hover{filter:brightness(1.07);transform:translateY(-1px);}
 .form-input,.form-select{border:1.5px solid var(--p-input-border);border-radius:9px;padding:8px 12px;
-  background:rgba(255,255,255,.9);transition:border-color .2s,box-shadow .2s;width:100%;font-size:.9rem;}
+  background:rgba(255,255,255,.9);transition:border-color .2s,box-shadow .2s;width:100%;font-size:.9rem;color:#111827;}
 .form-input:focus,.form-select:focus{outline:none;border-color:var(--p1);box-shadow:0 0 0 3px var(--p-focus-ring);}
 .nav-item{padding:10px 14px;border-radius:10px;cursor:pointer;transition:all .2s;
   display:flex;align-items:center;gap:10px;font-size:.875rem;font-weight:600;color:var(--p-sidebar-text);}
@@ -65,13 +67,13 @@ body{background:linear-gradient(135deg,var(--p-bg1) 0%,var(--p-bg2) 100%);min-he
 .s-shipped{background:#d1e7dd;color:#0a3622;}
 .s-cancelled{background:#f8d7da;color:#842029;}
 th{padding:10px 12px;text-align:left;font-size:.75rem;font-weight:700;color:var(--p-title);white-space:nowrap;}
-td{padding:9px 12px;font-size:.85rem;border-bottom:1px solid var(--p-tbl-border);color:#374151;font-weight:500;}
+td{padding:9px 12px;font-size:.85rem;border-bottom:1px solid var(--p-tbl-border);color:#1f2937;font-weight:500;}
 tr:hover td{background:var(--p-hover-row);}
 .tbl-header{background:linear-gradient(135deg,var(--p-tbl-bg1),var(--p-tbl-bg2));}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;
   display:flex;align-items:center;justify-content:center;padding:16px;}
 .modal-box{background:#fff;border-radius:16px;padding:28px;width:100%;
-  box-shadow:0 20px 60px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto;}
+  box-shadow:0 20px 60px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto;color:#111827;}
 .sec-title{font-size:1rem;font-weight:700;color:var(--p-title);display:flex;align-items:center;gap:8px;margin-bottom:16px;}
 .sec-title::after{content:'';flex:1;height:1px;background:linear-gradient(to right,var(--p-line),transparent);}
 .loading{display:inline-block;width:16px;height:16px;border:2px solid #ccc;
@@ -117,11 +119,15 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
 .sidebar-section-label{font-size:.7rem;font-weight:700;color:rgba(255,255,255,.55);
   letter-spacing:.08em;text-transform:uppercase;padding:12px 14px 4px;}
 /* モーダル内 */
-.modal-label{font-size:.78rem;font-weight:600;color:#374151;margin-bottom:4px;}
+.modal-label{font-size:.78rem;font-weight:600;color:#1f2937;margin-bottom:4px;}
 /* カード内の補助テキスト */
-.meta-text{font-size:.78rem;color:#6b7280;}
+.meta-text{font-size:.78rem;color:#4b5563;}
 /* stat-card見出し */
-.stat-label{font-size:.75rem;font-weight:600;color:#4b5563;margin-bottom:4px;}
+.stat-label{font-size:.75rem;font-weight:600;color:#374151;margin-bottom:4px;}
+/* テーブル補助テキスト */
+.text-sub{font-size:.8rem;color:#4b5563;}
+/* フォームラベル共通 */
+label{color:#1f2937!important;font-weight:600;}
 @media(max-width:768px){.sidebar-desktop{display:none!important;}.header-page-name{display:block;}}
 @media(min-width:769px){.mobile-menu-btn{display:none!important;}.header-page-name{display:none;}}
 </style>
@@ -196,7 +202,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
         </div>
         <div>
           <p id="sidebarSiteName" class="font-bold text-gray-800 text-sm leading-tight">OrderFlow</p>
-          <p class="text-xs text-gray-400">管理者画面</p>
+          <p class="text-xs text-gray-500">管理者画面</p>
         </div>
       </div>
     </div>
@@ -217,7 +223,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
   </aside>
 
   <!-- コンテンツエリア -->
-  <div class="flex-1 min-w-0 p-4 md:p-6">
+  <div class="flex-1 min-w-0 p-4 md:p-6 content-area">
     <!-- ヘッダー -->
     <header class="flex items-center justify-between mb-6">
       <div class="flex items-center gap-3">
@@ -249,7 +255,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
         </div>
       </div>
       <div class="card p-6">
-        <div class="sec-title"><i class="fas fa-bell text-amber-500"></i> 未確認の発注</div>
+        <div class="sec-title"><i class="fas fa-bell text-amber-600"></i> 未確認の発注</div>
         <div id="recentOrders"></div>
       </div>
     </div>
@@ -280,7 +286,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
             <thead class="tbl-header">
               <tr><th>発注番号</th><th>店舗/部署</th><th>担当者</th><th>納品希望日</th><th>ステータス</th><th>発注日時</th><th>操作</th></tr>
             </thead>
-            <tbody id="ordersTbody"><tr><td colspan="7" class="text-center py-8 text-gray-400"><span class="loading"></span></td></tr></tbody>
+            <tbody id="ordersTbody"><tr><td colspan="7" class="text-center py-8 text-gray-500"><span class="loading"></span></td></tr></tbody>
           </table>
         </div>
       </div>
@@ -452,7 +458,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
       <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-file-import p-accent"></i>商品CSV取込</h2>
       <button onclick="closeModal('importModal')" class="text-gray-400 hover:text-gray-600 text-xl"><i class="fas fa-times"></i></button>
     </div>
-    <p class="text-sm text-gray-500 mb-2">1行目をヘッダーとして読み込みます。列名：<code class="bg-gray-100 px-1 rounded">category,brand,product_name,product_code,barcode,unit</code></p>
+    <p class="text-sm text-gray-700 mb-2">1行目をヘッダーとして読み込みます。列名：<code class="bg-gray-100 px-1 rounded text-gray-700">category,brand,product_name,product_code,barcode,unit</code></p>
     <textarea id="csvInput" rows="10" class="form-input font-mono text-xs" placeholder="category,brand,product_name,product_code,barcode,unit
 飲料,サントリー,プレミアムモルツ,DRK-001,4901777317871,缶"></textarea>
     <div class="flex gap-3 mt-4">
@@ -707,11 +713,11 @@ async function loadDashboard() {
     var d2   = await res2.json();
     var recent = (d2.orders||[]).slice(0,5);
     var el = document.getElementById('recentOrders');
-    if (recent.length===0){ el.innerHTML='<p class="text-gray-400 text-sm py-4 text-center">未確認の発注はありません</p>'; return; }
+    if (recent.length===0){ el.innerHTML='<p class="text-gray-500 text-sm py-4 text-center">未確認の発注はありません</p>'; return; }
     el.innerHTML = '<div class="space-y-2">' + recent.map(function(o){
       return '<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-green-50 transition-colors" onclick="goDashboardOrder('+o.id+')" style="cursor:pointer">'
         + '<div><p class="font-bold text-sm p-accent">'+o.order_no+'</p>'
-        + '<p class="text-xs text-gray-500">'+o.store_name+(o.section_name?' / '+o.section_name:'')+'</p></div>'
+        + '<p class="text-xs text-gray-600">'+o.store_name+(o.section_name?' / '+o.section_name:'')+'</p></div>'
         + '<span class="sbadge s-pending">未確認</span>'
         + '</div>';
     }).join('') + '</div>';
@@ -732,15 +738,15 @@ async function loadOrders() {
   var data = await res.json();
   var tbody = document.getElementById('ordersTbody');
   var orders = data.orders||[];
-  if (orders.length===0){ tbody.innerHTML='<tr><td colspan="7" class="text-center py-8 text-gray-400">発注はありません</td></tr>'; return; }
+  if (orders.length===0){ tbody.innerHTML='<tr><td colspan="7" class="text-center py-8 text-gray-500">発注はありません</td></tr>'; return; }
   tbody.innerHTML = orders.map(function(o){
     return '<tr>'
       +'<td><span class="font-bold cursor-pointer hover:underline p-accent-link" onclick="showOrderDetail('+o.id+')">'+o.order_no+'</span></td>'
-      +'<td>'+o.store_name+'<br><span class="text-xs text-gray-400">'+(o.section_name||'')+'</span></td>'
+      +'<td>'+o.store_name+'<br><span class="text-xs text-gray-600">'+(o.section_name||'')+'</span></td>'
       +'<td>'+(o.orderer_name||'-')+'</td>'
       +'<td>'+(o.desired_delivery_date||'-')+'</td>'
       +'<td><span class="sbadge '+(statusCls[o.status]||'')+'">'+( statusLabel[o.status]||o.status)+'</span></td>'
-      +'<td class="text-xs text-gray-500">'+fmtDate(o.created_at)+'</td>'
+      +'<td class="text-xs text-gray-600">'+fmtDate(o.created_at)+'</td>'
       +'<td class="flex items-center gap-2 py-2">'
       +'<select class="form-select text-xs py-1 px-2 w-auto" style="width:auto" onchange="updateStatus('+o.id+',this.value)">'
       +['pending','confirmed','preparing','inspecting','shipped','cancelled'].map(function(s){ return '<option value="'+s+'"'+(s===o.status?' selected':'')+'>'+statusLabel[s]+'</option>'; }).join('')
@@ -764,25 +770,25 @@ async function showOrderDetail(id) {
   document.getElementById('orderModalContent').innerHTML =
     '<div class="space-y-4">'
     +'<div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">'
-    +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">発注番号</p><p class="font-bold p-accent">'+order.order_no+'</p></div>'
-    +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">ステータス</p>'
+    +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-600 font-semibold mb-1">発注番号</p><p class="font-bold p-accent">'+order.order_no+'</p></div>'
+    +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-600 font-semibold mb-1">ステータス</p>'
     +'<select class="form-select text-xs py-1 px-2" onchange="updateStatusAndClose('+order.id+',this.value)">'
     +['pending','confirmed','preparing','inspecting','shipped','cancelled'].map(function(s){ return '<option value="'+s+'"'+(s===order.status?' selected':'')+'>'+statusLabel[s]+'</option>'; }).join('')
     +'</select></div>'
-    +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">発注日時</p><p>'+fmtDate(order.created_at)+'</p></div>'
-    +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">店舗/部署</p><p>'+order.store_name+(order.section_name?' / '+order.section_name:'')+'</p></div>'
-    +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">担当者</p><p>'+(order.orderer_name||'-')+'</p></div>'
-    +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">納品希望日</p><p>'+(order.desired_delivery_date||'-')+'</p></div>'
-    +(order.worker_name?'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-500 mb-1">作業者</p><p>'+order.worker_name+'</p></div>':'')
+    +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-600 font-semibold mb-1">発注日時</p><p class="text-gray-800">'+fmtDate(order.created_at)+'</p></div>'
+    +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-600 font-semibold mb-1">店舗/部署</p><p class="text-gray-800">'+order.store_name+(order.section_name?' / '+order.section_name:'')+'</p></div>'
+    +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-600 font-semibold mb-1">担当者</p><p class="text-gray-800">'+(order.orderer_name||'-')+'</p></div>'
+    +'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-600 font-semibold mb-1">納品希望日</p><p class="text-gray-800">'+(order.desired_delivery_date||'-')+'</p></div>'
+    +(order.worker_name?'<div class="bg-gray-50 rounded-lg p-3"><p class="text-xs text-gray-600 font-semibold mb-1">作業者</p><p class="text-gray-800">'+order.worker_name+'</p></div>':'')
     +'</div>'
     +(order.note?'<div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm"><p class="text-xs text-amber-600 mb-1 font-semibold">備考</p><p>'+order.note+'</p></div>':'')
     +'<div class="sec-title mt-2"><i class="fas fa-list p-accent"></i> 発注明細</div>'
     +'<div class="overflow-x-auto"><table class="w-full text-sm"><thead class="tbl-header"><tr><th>商品名</th><th>ブランド</th><th>コード</th><th>バーコード</th><th>数量</th><th>検品</th></tr></thead><tbody>'
     +items.map(function(i){
       var matched = i.barcode && inspectedBarcodes.has(i.barcode);
-      return '<tr><td>'+i.product_name+'</td><td class="text-gray-500">'+(i.brand||'-')+'</td>'
-        +'<td class="text-xs text-gray-400 font-mono">'+(i.product_code||'-')+'</td>'
-        +'<td class="text-xs text-gray-400 font-mono">'+(i.barcode||'-')+'</td>'
+      return '<tr><td class="font-medium">'+i.product_name+'</td><td class="text-gray-600">'+(i.brand||'-')+'</td>'
+        +'<td class="text-xs text-gray-600 font-mono">'+(i.product_code||'-')+'</td>'
+        +'<td class="text-xs text-gray-600 font-mono">'+(i.barcode||'-')+'</td>'
         +'<td class="font-bold text-right p-accent">'+i.quantity+(i.unit||'')+'</td>'
         +'<td class="text-center">'+(matched?'<i class="fas fa-check-circle text-green-500"></i>':'<i class="far fa-circle text-gray-300"></i>')+'</td></tr>';
     }).join('')
@@ -807,14 +813,14 @@ async function loadProducts() {
   var data = await res.json();
   var tbody = document.getElementById('productsTbody');
   var prods = data.products||[];
-  if (prods.length===0){ tbody.innerHTML='<tr><td colspan="8" class="text-center py-8 text-gray-400">商品がありません</td></tr>'; return; }
+  if (prods.length===0){ tbody.innerHTML='<tr><td colspan="8" class="text-center py-8 text-gray-500">商品がありません</td></tr>'; return; }
   tbody.innerHTML = prods.map(function(p){
     return '<tr>'
-      +'<td><span class="sbadge" style="background:#e8f5e9;color:#2e7d32">'+(p.category||'-')+'</span></td>'
-      +'<td class="text-gray-500 text-xs">'+(p.brand||'-')+'</td>'
+      +'<td><span class="sbadge s-shipped">'+(p.category||'-')+'</span></td>'
+      +'<td class="text-gray-600 text-xs">'+(p.brand||'-')+'</td>'
       +'<td class="font-medium">'+(p.is_new?'<span class="new-badge">NEW</span>':'')+' '+p.product_name+'</td>'
-      +'<td class="text-xs text-gray-400 font-mono">'+(p.product_code||'-')+'</td>'
-      +'<td class="text-xs text-gray-400 font-mono">'+(p.barcode||'-')+'</td>'
+      +'<td class="text-xs text-gray-600 font-mono">'+(p.product_code||'-')+'</td>'
+      +'<td class="text-xs text-gray-600 font-mono">'+(p.barcode||'-')+'</td>'
       +'<td>'+(p.unit||'個')+'</td>'
       +'<td><span class="sbadge '+(p.is_active?'s-shipped':'s-cancelled')+'">'+(p.is_active?'有効':'無効')+'</span></td>'
       +'<td class="flex items-center gap-2">'
@@ -893,12 +899,12 @@ async function loadStores() {
   var data=await res.json();
   var tbody=document.getElementById('storesTbody');
   var stores=data.stores||[];
-  if(stores.length===0){tbody.innerHTML='<tr><td colspan="6" class="text-center py-8 text-gray-400">発注元がありません</td></tr>';return;}
+  if(stores.length===0){tbody.innerHTML='<tr><td colspan="6" class="text-center py-8 text-gray-500">発注元がありません</td></tr>';return;}
   tbody.innerHTML=stores.map(function(s){
     return '<tr>'
       +'<td class="font-medium">'+s.store_name+'</td>'
-      +'<td class="text-gray-500">'+(s.section_name||'-')+'</td>'
-      +'<td class="text-gray-500">'+(s.phone||'-')+'</td>'
+      +'<td class="text-gray-700">'+(s.section_name||'-')+'</td>'
+      +'<td class="text-gray-700">'+(s.phone||'-')+'</td>'
       +'<td class="font-mono text-sm p-accent">'+s.login_id+'</td>'
       +'<td>'+(s.is_test?'<span class="sbadge" style="background:#fef3c7;color:#b45309">テスト</span>':'')+'</td>'
       +'<td class="flex items-center gap-2">'
@@ -948,13 +954,13 @@ async function loadNoticesAdmin() {
   var tbody=document.getElementById('noticesTbody');
   var typeLabel={general:'一般',important:'重要',info:'情報'};
   var typeBg={general:'background:#dbeafe;color:#1e40af',important:'background:#fee2e2;color:#991b1b',info:'background:#d1fae5;color:#065f46'};
-  if(allNoticesAdmin.length===0){tbody.innerHTML='<tr><td colspan="5" class="text-center py-8 text-gray-400">お知らせがありません</td></tr>';return;}
+  if(allNoticesAdmin.length===0){tbody.innerHTML='<tr><td colspan="5" class="text-center py-8 text-gray-500">お知らせがありません</td></tr>';return;}
   tbody.innerHTML=allNoticesAdmin.map(function(n){
     return '<tr>'
       +'<td class="font-medium">'+n.title+'</td>'
       +'<td><span class="sbadge" style="'+(typeBg[n.notice_type]||typeBg.general)+'">'+(typeLabel[n.notice_type]||n.notice_type)+'</span></td>'
-      +'<td class="text-xs text-gray-400">'+(n.expire_at?fmtDate(n.expire_at):'無期限')+'</td>'
-      +'<td class="text-xs text-gray-400">'+fmtDate(n.created_at)+'</td>'
+      +'<td class="text-xs text-gray-600">'+(n.expire_at?fmtDate(n.expire_at):'無期限')+'</td>'
+      +'<td class="text-xs text-gray-600">'+fmtDate(n.created_at)+'</td>'
       +'<td class="flex items-center gap-2">'
       +'<button onclick="openNoticeModal('+n.id+')" class="text-xs btn-s py-1 px-2"><i class="fas fa-edit mr-1"></i>編集</button>'
       +'<button onclick="deleteNotice('+n.id+')" class="btn-d"><i class="fas fa-trash"></i></button>'
