@@ -321,7 +321,7 @@ body{
 
 <script>
 var ORDER_ID = '${orderId}';
-var adminToken = localStorage.getItem('admin_token');
+var adminToken = localStorage.getItem('adminToken') || localStorage.getItem('admin_token');
 // orderItems: [{id, product_name, product_code(barcode), category, supplier_name, unified_code, gift_code, quantity, scan_count}]
 var orderItems = [];
 // scanCounts: {barcode: count_of_scans}
@@ -361,6 +361,8 @@ function applyThemeInsp(preset) {
 
 // ============ 初期化 ============
 async function init() {
+  // adminToken の再取得（両方のキーに対応）
+  adminToken = localStorage.getItem('adminToken') || localStorage.getItem('admin_token') || '';
   if (!adminToken) { window.location.href = '/admin'; return; }
   try {
     var sd = await (await fetch('/api/settings')).json();

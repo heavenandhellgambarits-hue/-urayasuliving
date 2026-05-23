@@ -63,7 +63,6 @@ label{color:#1f2937!important;font-weight:600;}
 .sbadge{padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;white-space:nowrap;}
 .s-pending{background:#fff3cd;color:#856404;}
 .s-printed{background:#d1ecf1;color:#0c5460;}
-.s-inspecting{background:#fce4ec;color:#8b174d;}
 .s-completed{background:#d1e7dd;color:#0a3622;}
 .s-cancel_request{background:#ffe4cc;color:#7c2d12;}
 .s-cancelled{background:#f8d7da;color:#842029;}
@@ -116,9 +115,11 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
 .stat-label{font-size:.75rem;font-weight:600;color:#374151;margin-bottom:4px;}
 /* 納品書印刷 */
 @media print{
+  @page{size:A4 landscape;margin:10mm;}
   body *{visibility:hidden!important;}
   #deliverySlip,#deliverySlip *{visibility:visible!important;}
   #deliverySlip{position:fixed;top:0;left:0;width:100%;font-family:'Hiragino Sans',sans-serif;}
+  header,footer,nav,.sidebar-desktop,.drawer,#drawerOverlay{display:none!important;}
 }
 @media(max-width:768px){.sidebar-desktop{display:none!important;}.header-page-name{display:block;}}
 @media(min-width:769px){.mobile-menu-btn{display:none!important;}.header-page-name{display:none;}}
@@ -236,7 +237,6 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
             <option value="">全ステータス</option>
             <option value="pending">未確認</option>
             <option value="printed">印刷済</option>
-            <option value="inspecting">検品中</option>
             <option value="completed">完了</option>
             <option value="cancel_request">キャンセル依頼</option>
             <option value="cancelled">キャンセル済</option>
@@ -614,8 +614,8 @@ function fmtDateJST(dt) {
 }
 
 // ========== ステータス ==========
-var statusLabel = {pending:'未確認',printed:'印刷済',inspecting:'検品中',completed:'完了',cancel_request:'キャンセル依頼',cancelled:'キャンセル済'};
-var statusCls   = {pending:'s-pending',printed:'s-printed',inspecting:'s-inspecting',completed:'s-completed',cancel_request:'s-cancel_request',cancelled:'s-cancelled'};
+var statusLabel = {pending:'未確認',printed:'印刷済',completed:'完了',cancel_request:'キャンセル依頼',cancelled:'キャンセル済'};
+var statusCls   = {pending:'s-pending',printed:'s-printed',completed:'s-completed',cancel_request:'s-cancel_request',cancelled:'s-cancelled'};
 
 // ========== ログイン ==========
 async function doLogin() {
@@ -808,9 +808,9 @@ async function printDeliverySlip(id) {
     + '</table>'
     + '<table style="width:100%;border-collapse:collapse;font-size:9pt;">'
     + '<thead><tr style="background:#e8f0e8;">'
-    + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:left;">商品名</th>'
     + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:left;">ギフトコード</th>'
-    + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:left;">バーコード</th>'
+    + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:left;">商品名</th>'
+    + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:left;">商品記号バーコード</th>'
     + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:left;">仕入先</th>'
     + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:left;">ストック場所</th>'
     + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:center;">区-番地</th>'
@@ -820,8 +820,8 @@ async function printDeliverySlip(id) {
     + items.map(function(it) {
         var locDetail = (it.stock_ku != null || it.stock_banchi != null) ? (it.stock_ku||'') + '-' + (it.stock_banchi||'') : '-';
         return '<tr>'
+          + '<td style="border:1px solid #ccc;padding:4px 8px;font-family:monospace;font-weight:bold;">' + (it.gift_code||'-') + '</td>'
           + '<td style="border:1px solid #ccc;padding:4px 8px;">' + it.product_name + '</td>'
-          + '<td style="border:1px solid #ccc;padding:4px 8px;font-family:monospace;">' + (it.gift_code||'-') + '</td>'
           + '<td style="border:1px solid #ccc;padding:4px 8px;font-family:monospace;">' + (it.barcode||'-') + '</td>'
           + '<td style="border:1px solid #ccc;padding:4px 8px;">' + (it.supplier_name||'-') + '</td>'
           + '<td style="border:1px solid #ccc;padding:4px 8px;">' + (it.stock_location||'-') + '</td>'

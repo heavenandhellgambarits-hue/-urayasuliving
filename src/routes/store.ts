@@ -96,7 +96,7 @@ store.post('/orders', async (c) => {
   }
 
   await c.env.DB.prepare('INSERT INTO order_progress (order_id) VALUES (?)').bind(orderId).run();
-  return c.json({ order_no, order_id: orderId }, 201);
+  return c.json({ order_no, order_id: orderId, id: orderId }, 201);
 });
 
 // キャンセル依頼

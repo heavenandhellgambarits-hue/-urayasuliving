@@ -74,7 +74,6 @@ body{background:linear-gradient(135deg,var(--p-bg1) 0%,var(--p-bg2) 50%,var(--p-
 .status-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:20px;font-size:.78rem;font-weight:700;}
 .s-pending{background:#fff3cd;color:#856404;}
 .s-printed{background:#d1ecf1;color:#0c5460;}
-.s-inspecting{background:#e8d5f5;color:#5a1fa2;}
 .s-completed{background:#d1e7dd;color:#0a3622;}
 .s-cancel_request{background:#ffe5d0;color:#842029;}
 .s-cancelled{background:#f8d7da;color:#842029;}
@@ -946,7 +945,7 @@ async function submitOrder() {
     // 発注データを保持（発注控え用）
     currentOrderData = {
       order_no: data.order_no,
-      order_id: data.id,
+      order_id: data.order_id,
       orderer_name: ordererName,
       store_name: storeInfo ? storeInfo.store_name : '',
       section_name: storeInfo ? storeInfo.section_name : '',
@@ -1090,8 +1089,8 @@ function clearHistFilter() {
   loadOrders();
 }
 
-var statusLabel = {pending:'未確認',printed:'印刷済',inspecting:'検品中',completed:'完了',cancel_request:'キャンセル依頼',cancelled:'キャンセル済'};
-var statusCls   = {pending:'s-pending',printed:'s-printed',inspecting:'s-inspecting',completed:'s-completed',cancel_request:'s-cancel_request',cancelled:'s-cancelled'};
+var statusLabel = {pending:'未確認',printed:'印刷済',completed:'完了',cancel_request:'キャンセル依頼',cancelled:'キャンセル済'};
+var statusCls   = {pending:'s-pending',printed:'s-printed',completed:'s-completed',cancel_request:'s-cancel_request',cancelled:'s-cancelled'};
 
 function renderHistoryTable(orders) {
   if (orders.length === 0) {
