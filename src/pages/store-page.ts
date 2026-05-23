@@ -283,7 +283,7 @@ tr:hover td{background:var(--p-hover-row);}
                 <th onclick="sortProducts('unified_code')" style="min-width:90px;">統一コード<span class="sort-icon" id="sh-unified_code"></span></th>
                 <th onclick="sortProducts('gift_code')" style="min-width:80px;">ギフトコード<span class="sort-icon" id="sh-gift_code"></span></th>
                 <th onclick="sortProducts('product_name')" style="min-width:140px;">商品名<span class="sort-icon" id="sh-product_name"></span></th>
-                <th onclick="sortProducts('product_code')" style="min-width:110px;">バーコード<span class="sort-icon" id="sh-product_code"></span></th>
+                <th onclick="sortProducts('product_code')" style="min-width:110px;">商品記号<span class="sort-icon" id="sh-product_code"></span></th>
                 <th onclick="sortProducts('supplier_code')" style="min-width:90px;">仕入先コード<span class="sort-icon" id="sh-supplier_code"></span></th>
                 <th onclick="sortProducts('supplier_name')" style="min-width:100px;">仕入先名<span class="sort-icon" id="sh-supplier_name"></span></th>
                 <th style="min-width:130px;text-align:center;">数量</th>
@@ -724,6 +724,8 @@ function startNewOrder() {
   document.getElementById('ordererName').value = '';
   document.getElementById('deliveryDate').value = '';
   document.getElementById('orderNote').value = '';
+  // 商品テーブルの数量欄を全て0にリセット
+  filterProducts();
   showTab('products');
 }
 
@@ -1033,7 +1035,7 @@ function buildVoucherHtml(od) {
     + '<table><thead><tr style="background:#f0f7f0;">'
     + '<th style="width:36px;text-align:center;">No.</th>'
     + '<th>カテゴリ</th><th>統一コード</th><th>ギフトコード</th>'
-    + '<th>商品名</th><th>バーコード</th><th>仕入先名</th>'
+    + '<th>商品名</th><th>商品記号</th><th>仕入先名</th>'
     + '<th style="width:50px;text-align:center;">数量</th>'
     + '</tr></thead><tbody>'+rowsHtml+'</tbody></table>'
     + '<div style="margin-top:16px;font-size:10px;color:#999;text-align:right;">※本書は発注控えです。内容をご確認ください。</div>'
@@ -1053,7 +1055,7 @@ function exportVoucherExcel(od, fmt) {
     ['備考', od.note||''],
     []
   ];
-  var header = ['No.','カテゴリ','統一コード','ギフトコード','商品名','バーコード','仕入先名','数量'];
+  var header = ['No.','カテゴリ','統一コード','ギフトコード','商品名','商品記号','仕入先名','数量'];
   var dataRows = (od.items||[]).map(function(it,i) {
     return [i+1, it.category||'', it.unified_code||'', it.gift_code||'', it.product_name||'', it.product_code||'', it.supplier_name||'', it.quantity];
   });
@@ -1273,8 +1275,8 @@ function renderNoticeAccordion() {
     + '<div class="notice-accordion-header" onclick="toggleNoticeAccordion()">'
     + '<div class="flex items-center gap-2"><i class="fas fa-bell text-amber-500"></i>'
     + '<span class="font-bold text-amber-800 text-sm">お知らせ（'+allNotices.length+'件）</span></div>'
-    + '<i class="fas fa-chevron-down text-amber-500 text-sm" id="noticeChevron"></i></div>'
-    + '<div class="notice-accordion-body hidden" id="noticeAccordionBody">'
+    + '<i class="fas fa-chevron-down text-amber-500 text-sm" id="noticeChevron" style="transform:rotate(180deg);"></i></div>'
+    + '<div class="notice-accordion-body" id="noticeAccordionBody">'  // hiddenなし→デフォルト開き
     + '<div class="space-y-0">'
     + allNotices.map(function(n) {
       return '<div class="notice-item '+(n.notice_type==='important'?'important':'')+'" onclick="showNoticeDetail('+n.id+')">'
