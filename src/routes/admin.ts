@@ -193,16 +193,28 @@ admin.post('/products/import', async (c) => {
   const jst = nowJST();
   let count = 0;
   for (const r of rows) {
-    if (!r.product_name) continue;
+    // 日本語ヘッダー・英語ヘッダー両対応
+    const category      = r['カテゴリ']       || r.category       || '';
+    const unified_code  = r['統一コード']      || r.unified_code   || '';
+    const gift_code     = r['ギフトコード']    || r.gift_code      || '';
+    const product_name  = r['商品名']          || r.product_name   || '';
+    const product_code  = r['商品記号']        || r.product_code   || '';
+    const barcode       = r['バーコード']      || r.barcode        || '';
+    const supplier_code = r['仕入先コード']    || r.supplier_code  || '';
+    const supplier_name = r['仕入先名']        || r.supplier_name  || '';
+    const stock_location= r['ストック場所']    || r.stock_location || '';
+    const stock_ku      = r['区']              ?? r.stock_ku       ?? null;
+    const stock_banchi  = r['番地']            ?? r.stock_banchi   ?? null;
+    if (!product_name) continue;
     await c.env.DB.prepare(
       `INSERT OR REPLACE INTO products
         (category, product_name, product_code, barcode, gift_code, unified_code,
          supplier_code, supplier_name, stock_location, stock_ku, stock_banchi, is_active, registered_at, updated_at)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,1,?,?)`
     ).bind(
-      r.category||'', r.product_name, r.product_code||'', r.barcode||'',
-      r.gift_code||'', r.unified_code||'', r.supplier_code||'', r.supplier_name||'',
-      r.stock_location||'', r.stock_ku||null, r.stock_banchi||null, jst, jst
+      category, product_name, product_code, barcode,
+      gift_code, unified_code, supplier_code, supplier_name,
+      stock_location, stock_ku||null, stock_banchi||null, jst, jst
     ).run();
     count++;
   }

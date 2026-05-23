@@ -1112,7 +1112,7 @@ function renderHistoryTable(orders) {
         + '<div class="flex gap-1 justify-end flex-wrap">'
         + '<button onclick="showOrderDetail('+o.id+')" class="btn-sm btn-sm-gray"><i class="fas fa-eye mr-1"></i>詳細</button>'
         + '<button onclick="exportOrderVoucher('+o.id+')" class="btn-sm btn-sm-green"><i class="fas fa-file-alt mr-1"></i>控え</button>'
-        + (canCancel ? '<button onclick="openCancelRequest('+o.id+',\''+esc(o.order_no)+'\')" class="btn-sm btn-sm-red"><i class="fas fa-ban mr-1"></i>キャンセル</button>' : '')
+        + (canCancel ? '<button onclick="openCancelRequest('+o.id+',\\''+esc(o.order_no)+'\\')" class="btn-sm btn-sm-red"><i class="fas fa-ban mr-1"></i>キャンセル</button>' : '')
         + '</div>'
         + '</td></tr>';
     }).join('')
@@ -1161,10 +1161,10 @@ function openVoucherSelectModal(od) {
     + '<h3 class="text-base font-bold text-gray-800 mb-4"><i class="fas fa-file-alt text-green-600 mr-2"></i>発注控え出力形式を選択</h3>'
     + '<p class="text-sm text-gray-600 mb-4">発注番号: <strong class="text-green-700">'+esc(od.order_no)+'</strong></p>'
     + '<div class="flex flex-col gap-2">'
-    + '<button onclick="this.closest(\'.modal-overlay\').remove();showVoucherModal(window._tmpOd)" class="btn-primary"><i class="fas fa-file-pdf mr-2"></i>PDF（A4横）</button>'
-    + '<button onclick="this.closest(\'.modal-overlay\').remove();exportVoucherExcel(window._tmpOd,\'xlsx\')" class="btn-sm btn-sm-orange w-full py-2"><i class="fas fa-file-excel mr-2"></i>Excel（xlsx）</button>'
-    + '<button onclick="this.closest(\'.modal-overlay\').remove();exportVoucherExcel(window._tmpOd,\'xls\')" class="btn-sm btn-sm-gray w-full py-2"><i class="fas fa-file-excel mr-2"></i>Excel（xls）</button>'
-    + '<button onclick="this.closest(\'.modal-overlay\').remove()" class="btn-secondary w-full mt-1">閉じる</button>'
+    + '<button onclick="this.closest(\\'.modal-overlay\\').remove();showVoucherModal(window._tmpOd)" class="btn-primary"><i class="fas fa-file-pdf mr-2"></i>PDF（A4横）</button>'
+    + '<button onclick="this.closest(\\'.modal-overlay\\').remove();exportVoucherExcel(window._tmpOd,\\'xlsx\\')" class="btn-sm btn-sm-orange w-full py-2"><i class="fas fa-file-excel mr-2"></i>Excel（xlsx）</button>'
+    + '<button onclick="this.closest(\\'.modal-overlay\\').remove();exportVoucherExcel(window._tmpOd,\\'xls\\')" class="btn-sm btn-sm-gray w-full py-2"><i class="fas fa-file-excel mr-2"></i>Excel（xls）</button>'
+    + '<button onclick="this.closest(\\'.modal-overlay\\').remove()" class="btn-secondary w-full mt-1">閉じる</button>'
     + '</div></div>';
   window._tmpOd = od;
   document.body.appendChild(overlay);
@@ -1225,7 +1225,7 @@ async function showOrderDetail(id) {
   // アクションボタン
   var actionsEl = document.getElementById('orderDetailActions');
   actionsEl.innerHTML = '<button onclick="exportOrderVoucher('+id+')" class="btn-sm btn-sm-green"><i class="fas fa-file-alt mr-1"></i>発注控えを出力</button>'
-    + (canCancel ? '<button onclick="closeModal(\'orderDetailModal\');openCancelRequest('+id+',\''+esc(order.order_no)+'\')" class="btn-sm btn-sm-red"><i class="fas fa-ban mr-1"></i>キャンセル依頼</button>' : '');
+    + (canCancel ? '<button onclick="closeModal(\\'orderDetailModal\\');openCancelRequest('+id+',\\''+esc(order.order_no)+'\\')" class="btn-sm btn-sm-red"><i class="fas fa-ban mr-1"></i>キャンセル依頼</button>' : '');
   document.getElementById('orderDetailModal').classList.remove('hidden');
 }
 

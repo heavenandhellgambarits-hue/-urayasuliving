@@ -446,7 +446,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
       <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-file-excel p-accent"></i>商品Excel取込</h2>
       <button onclick="closeModal('importModal')" class="text-gray-500 text-xl"><i class="fas fa-times"></i></button>
     </div>
-    <p class="text-sm text-gray-700 mb-3">1行目をヘッダーとして読み込みます。<br>列名: <code class="bg-gray-100 px-1 rounded text-gray-700">category / unified_code / gift_code / product_name / barcode / supplier_code / supplier_name / stock_location / stock_ku / stock_banchi</code></p>
+    <p class="text-sm text-gray-700 mb-3">1行目をヘッダーとして読み込みます。<br>列名: <code class="bg-gray-100 px-1 rounded text-gray-700">カテゴリ / 統一コード / ギフトコード / 商品名 / 商品記号 / バーコード / 仕入先コード / 仕入先名 / ストック場所 / 区 / 番地</code></p>
     <div class="upload-zone" id="importDropZone" onclick="document.getElementById('importFile').click()">
       <i class="fas fa-file-excel text-green-600 text-3xl mb-2"></i>
       <p class="text-gray-600 text-sm">クリックまたはドロップでExcelを選択</p>
@@ -810,18 +810,20 @@ async function printDeliverySlip(id) {
     + '<thead><tr style="background:#e8f0e8;">'
     + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:left;">ギフトコード</th>'
     + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:left;">商品名</th>'
-    + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:left;">商品記号バーコード</th>'
+    + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:left;">商品記号</th>'
+    + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:left;">バーコード</th>'
     + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:left;">仕入先</th>'
     + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:left;">ストック場所</th>'
     + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:center;">区-番地</th>'
     + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:center;">数量</th>'
-    + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:center;width:50px;">✓</th>'
+    + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:center;width:40px;">✓</th>'
     + '</tr></thead><tbody>'
     + items.map(function(it) {
         var locDetail = (it.stock_ku != null || it.stock_banchi != null) ? (it.stock_ku||'') + '-' + (it.stock_banchi||'') : '-';
         return '<tr>'
           + '<td style="border:1px solid #ccc;padding:4px 8px;font-family:monospace;font-weight:bold;">' + (it.gift_code||'-') + '</td>'
           + '<td style="border:1px solid #ccc;padding:4px 8px;">' + it.product_name + '</td>'
+          + '<td style="border:1px solid #ccc;padding:4px 8px;font-family:monospace;">' + (it.product_code||'-') + '</td>'
           + '<td style="border:1px solid #ccc;padding:4px 8px;font-family:monospace;">' + (it.barcode||'-') + '</td>'
           + '<td style="border:1px solid #ccc;padding:4px 8px;">' + (it.supplier_name||'-') + '</td>'
           + '<td style="border:1px solid #ccc;padding:4px 8px;">' + (it.stock_location||'-') + '</td>'
@@ -930,7 +932,7 @@ async function deleteProduct(id) {
 // ========== Excel テンプレート出力 ==========
 function downloadProductTemplate() {
   var wb = XLSX.utils.book_new();
-  var headers = ['category','unified_code','gift_code','product_name','barcode','supplier_code','supplier_name','stock_location','stock_ku','stock_banchi'];
+  var headers = ['カテゴリ','統一コード','ギフトコード','商品名','商品記号','バーコード','仕入先コード','仕入先名','ストック場所','区','番地'];
   var ws = XLSX.utils.aoa_to_sheet([headers]);
   XLSX.utils.book_append_sheet(wb, ws, '商品マスタ');
   XLSX.writeFile(wb, '商品マスタテンプレート.xlsx');
@@ -940,9 +942,9 @@ function downloadProductTemplate() {
 async function exportProducts() {
   var data = await (await apiFetch('/api/admin/products')).json();
   var prods = data.products || [];
-  var rows = [['カテゴリ','統一コード','ギフトコード','商品名','商品記号バーコード','仕入先コード','仕入先名','ストック場所','区','番地','状態']];
+  var rows = [['カテゴリ','統一コード','ギフトコード','商品名','商品記号','バーコード','仕入先コード','仕入先名','ストック場所','区','番地','状態']];
   prods.forEach(function(p) {
-    rows.push([p.category||'', p.unified_code||'', p.gift_code||'', p.product_name, p.barcode||'', p.supplier_code||'', p.supplier_name||'', p.stock_location||'', p.stock_ku!=null?p.stock_ku:'', p.stock_banchi!=null?p.stock_banchi:'', p.is_active?'有効':'無効']);
+    rows.push([p.category||'', p.unified_code||'', p.gift_code||'', p.product_name, p.product_code||'', p.barcode||'', p.supplier_code||'', p.supplier_name||'', p.stock_location||'', p.stock_ku!=null?p.stock_ku:'', p.stock_banchi!=null?p.stock_banchi:'', p.is_active?'有効':'無効']);
   });
   var wb = XLSX.utils.book_new();
   var ws = XLSX.utils.aoa_to_sheet(rows);
