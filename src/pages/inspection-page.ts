@@ -98,6 +98,9 @@ body{
 .item-row.matched{
   border-color:#7ab87a;background:linear-gradient(135deg,rgba(122,184,122,.12),rgba(100,160,100,.06));
 }
+.item-row.partial{
+  border-color:#f59e0b;background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(200,130,10,.04));
+}
 .item-row.missing{
   border-color:#e0b8b8;background:rgba(239,68,68,.04);
 }
@@ -116,6 +119,7 @@ body{
 
 /* バッジ */
 .badge-done{background:linear-gradient(135deg,var(--ip1),var(--ip2));color:#fff;border-radius:999px;padding:2px 10px;font-size:.75rem;font-weight:700;}
+.badge-partial{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border-radius:999px;padding:2px 10px;font-size:.75rem;font-weight:700;}
 .badge-pending{background:rgba(239,68,68,.1);color:#c05050;border:1px solid rgba(220,80,80,.3);border-radius:999px;padding:2px 10px;font-size:.75rem;font-weight:700;}
 
 /* HIDモード枠 */
@@ -124,17 +128,36 @@ body{
   background:linear-gradient(135deg,rgba(255,220,100,.08),rgba(255,200,50,.04));
 }
 
-/* スキャン結果オーバーレイ */
+/* スキャン結果オーバーレイ（できるだけ大きく） */
 .result-overlay{
   position:fixed;inset:0;display:flex;flex-direction:column;
   align-items:center;justify-content:center;z-index:100;
-  pointer-events:none;opacity:0;transition:opacity .3s;
+  pointer-events:none;opacity:0;transition:opacity .25s;
 }
 .result-overlay.show{opacity:1;}
-.result-overlay.success{background:rgba(74,138,74,.93);}
-.result-overlay.error{background:rgba(180,50,50,.92);}
-.face-emoji{font-size:9rem;line-height:1;animation:pop .3s cubic-bezier(.17,.67,.6,1.4);}
-@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+.result-overlay.success{background:rgba(40,120,60,.92);}
+.result-overlay.error{background:rgba(160,30,30,.92);}
+.result-overlay.warn-dup{background:rgba(160,100,0,.90);}
+
+/* 顔の絵文字（できるだけ大きく） */
+.face-emoji{
+  font-size:min(38vw, 38vh);
+  line-height:1;
+  animation:facePop .25s cubic-bezier(.17,.67,.6,1.4);
+  text-shadow:0 8px 40px rgba(0,0,0,.35);
+}
+@keyframes facePop{from{transform:scale(0.3)}to{transform:scale(1)}}
+.result-text-main{
+  color:#fff;font-weight:800;margin-top:16px;
+  font-size:min(8vw,3rem);
+  text-shadow:0 2px 12px rgba(0,0,0,.4);
+}
+.result-text-sub{
+  color:rgba(255,255,255,.9);margin-top:8px;
+  font-size:min(4vw,1.2rem);
+  text-align:center;padding:0 20px;
+  text-shadow:0 1px 6px rgba(0,0,0,.3);
+}
 
 /* 完了ボタン */
 .complete-btn-active{
@@ -187,7 +210,7 @@ body{
         <p id="store-info" class="text-sm text-gray-500 mt-1"></p>
       </div>
       <div class="text-right">
-        <p class="text-xs text-gray-400 font-medium mb-1">進捗</p>
+        <p class="text-xs text-gray-400 font-medium mb-1">進捗（スキャン数/必要数）</p>
         <p id="progress-text" class="font-bold text-2xl text-green-600">-/-</p>
       </div>
     </div>
@@ -238,14 +261,17 @@ body{
     </div>
   </div>
 
-  <!-- 発注明細 -->
+  <!-- 発注明細（数量ベース） -->
   <div class="card p-4">
     <div class="section-title">
-      <i class="fas fa-list-check text-green-600"></i>発注明細
+      <i class="fas fa-list-check text-green-600"></i>発注明細（数量別スキャン状況）
       <button onclick="resetInspection()" class="ml-auto text-xs text-red-400 hover:text-red-600 font-medium" style="margin-left:auto;">
         <i class="fas fa-redo mr-1"></i>リセット
       </button>
     </div>
+    <p class="text-xs text-gray-400 mb-3">
+      <i class="fas fa-info-circle mr-1"></i>各商品を発注数量分スキャンすると検品完了になります
+    </p>
     <div id="items-list"></div>
   </div>
 
@@ -258,36 +284,36 @@ body{
     </p>
   </div>
 
-  <!-- 出荷完了ボタン -->
+  <!-- 検品完了ボタン -->
   <div class="pb-4">
-    <button id="complete-btn" onclick="completeShipment()" class="complete-btn-disabled" disabled>
-      <i class="fas fa-shipping-fast mr-2"></i>出荷完了にする
+    <button id="complete-btn" onclick="completeInspection()" class="complete-btn-disabled" disabled>
+      <i class="fas fa-clipboard-check mr-2"></i>検品完了にする
     </button>
-    <p id="complete-hint" class="text-center text-xs text-gray-400 mt-2">全品スキャン完了後に有効になります</p>
+    <p id="complete-hint" class="text-center text-xs text-gray-400 mt-2">全商品の必要数スキャン完了後に有効になります</p>
   </div>
 
 </div>
 
-<!-- スキャン結果オーバーレイ -->
+<!-- スキャン結果オーバーレイ（大型表示） -->
 <div id="result-overlay" class="result-overlay">
   <div id="result-face" class="face-emoji">😊</div>
-  <p id="result-text" class="text-white font-bold text-3xl mt-4 drop-shadow-lg"></p>
-  <p id="result-sub" class="text-white/85 text-base mt-3 px-8 text-center"></p>
+  <p id="result-text" class="result-text-main"></p>
+  <p id="result-sub" class="result-text-sub"></p>
 </div>
 
-<!-- 出荷完了確認モーダル -->
+<!-- 検品完了確認モーダル -->
 <div id="complete-modal" class="modal-overlay hidden">
   <div class="card p-6 max-w-sm w-full text-center">
     <div class="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-      <i class="fas fa-shipping-fast text-2xl text-green-600"></i>
+      <i class="fas fa-clipboard-check text-2xl text-green-600"></i>
     </div>
-    <h2 class="text-xl font-bold text-gray-800 mb-2">出荷完了確認</h2>
-    <p class="text-gray-500 text-sm mb-6">全商品の検品が完了しています。<br>出荷完了ステータスに変更しますか？</p>
+    <h2 class="text-xl font-bold text-gray-800 mb-2">検品完了確認</h2>
+    <p class="text-gray-500 text-sm mb-6">全商品の発注数量分のスキャンが完了しています。<br>検品完了ステータスに変更しますか？</p>
     <div class="flex gap-3">
       <button onclick="document.getElementById('complete-modal').classList.add('hidden')"
         class="btn-s flex-1">キャンセル</button>
       <button onclick="confirmComplete()" class="btn-p flex-1">
-        <i class="fas fa-check mr-1"></i>出荷完了
+        <i class="fas fa-check mr-1"></i>検品完了
       </button>
     </div>
   </div>
@@ -296,8 +322,10 @@ body{
 <script>
 var ORDER_ID = '${orderId}';
 var adminToken = localStorage.getItem('admin_token');
+// orderItems: [{id, product_name, product_code(barcode), category, supplier_name, unified_code, gift_code, quantity, scan_count}]
 var orderItems = [];
-var inspectedBarcodes = new Set();
+// scanCounts: {barcode: count_of_scans}
+var scanCounts = {};
 var scanHistory = [];
 var html5QrCode = null;
 var currentMode = 'camera';
@@ -315,20 +343,20 @@ var THEMES_INSP = {
 function applyThemeInsp(preset) {
   var t = THEMES_INSP[preset] || THEMES_INSP.green;
   var r = document.documentElement.style;
-  r.setProperty('--ip1',                   t.p1);
-  r.setProperty('--ip2',                   t.p2);
-  r.setProperty('--i-bg1',                 t.bg1);
-  r.setProperty('--i-bg2',                 t.bg2);
-  r.setProperty('--i-card-border',         t.cb);
-  r.setProperty('--i-input-border',        t.ib);
-  r.setProperty('--i-title',               t.tt);
-  r.setProperty('--i-line',                t.ln);
-  r.setProperty('--i-header-bg',           t.hbg);
-  r.setProperty('--i-prog-track',          t.pt);
-  r.setProperty('--i-item-border',         t.ib2);
-  r.setProperty('--i-mode-inactive-border',t.mib);
-  r.setProperty('--i-focus-ring',          t.fr);
-  r.setProperty('--i-prog-fill',           'linear-gradient(to right,' + t.p1 + ',' + t.p2 + ')');
+  r.setProperty('--ip1',                    t.p1);
+  r.setProperty('--ip2',                    t.p2);
+  r.setProperty('--i-bg1',                  t.bg1);
+  r.setProperty('--i-bg2',                  t.bg2);
+  r.setProperty('--i-card-border',          t.cb);
+  r.setProperty('--i-input-border',         t.ib);
+  r.setProperty('--i-title',                t.tt);
+  r.setProperty('--i-line',                 t.ln);
+  r.setProperty('--i-header-bg',            t.hbg);
+  r.setProperty('--i-prog-track',           t.pt);
+  r.setProperty('--i-item-border',          t.ib2);
+  r.setProperty('--i-mode-inactive-border', t.mib);
+  r.setProperty('--i-focus-ring',           t.fr);
+  r.setProperty('--i-prog-fill',            'linear-gradient(to right,' + t.p1 + ',' + t.p2 + ')');
 }
 
 // ============ 初期化 ============
@@ -348,15 +376,33 @@ async function loadOrder() {
     var res = await apiFetch('/api/admin/orders/' + ORDER_ID);
     var data = await res.json();
     var order = data.order;
-    var items = data.items;
-    var inspections = data.inspections;
+    var items = data.items || [];
+    var inspections = data.inspections || [];
 
     document.getElementById('order-no').textContent = order.order_no;
     document.getElementById('order-no-header').textContent = order.order_no;
-    document.getElementById('store-info').textContent = order.store_name + (order.section_name ? ' / ' + order.section_name : '');
+    document.getElementById('store-info').textContent = (order.store_name||'') + (order.section_name ? ' / ' + order.section_name : '');
 
-    orderItems = items || [];
-    inspectedBarcodes = new Set((inspections || []).filter(function(i){ return i.is_match; }).map(function(i){ return i.barcode_scanned; }));
+    orderItems = items.map(function(it) {
+      return {
+        id: it.id,
+        product_name: it.product_name || '',
+        barcode: it.barcode || it.product_code || '',
+        category: it.category || '',
+        supplier_name: it.supplier_name || '',
+        unified_code: it.unified_code || '',
+        gift_code: it.gift_code || '',
+        quantity: it.quantity || 1
+      };
+    });
+
+    // スキャン済み数量を復元（バーコード別カウント）
+    scanCounts = {};
+    inspections.forEach(function(insp) {
+      if (insp.is_match && insp.barcode_scanned) {
+        scanCounts[insp.barcode_scanned] = (scanCounts[insp.barcode_scanned] || 0) + 1;
+      }
+    });
 
     renderItems();
     updateProgress();
@@ -378,14 +424,31 @@ async function processScan(barcode) {
     var data = await res.json();
 
     if (data.is_match) {
-      inspectedBarcodes.add(barcode);
-      playSound('success');
-      showOverlay('success', '😊', '一致！', data.product ? data.product.product_name : barcode);
-      addHistory(barcode, true, data.product ? data.product.product_name : '');
+      // バーコードがマッチ: 対応商品の数量チェック
+      var matchedItem = orderItems.find(function(it){ return it.barcode === barcode; });
+      var currentCount = (scanCounts[barcode] || 0) + 1;
+      var needed = matchedItem ? matchedItem.quantity : 1;
+
+      if (currentCount > needed) {
+        // 過剰スキャン
+        playSound('warn');
+        showOverlay('warn-dup', '⚠️', '重複！', (matchedItem ? matchedItem.product_name : barcode) + ' はすでに' + needed + '個スキャン済みです');
+        addHistory(barcode, false, matchedItem ? matchedItem.product_name : '', '過剰スキャン');
+      } else {
+        scanCounts[barcode] = currentCount;
+        playSound('success');
+        var faceOk = data.all_completed ? '🎉' : '😊';
+        var msg = (matchedItem ? matchedItem.product_name : barcode) + ' (' + currentCount + '/' + needed + ')';
+        showOverlay('success', faceOk, '一致！', msg);
+        addHistory(barcode, true, matchedItem ? matchedItem.product_name : '', currentCount + '/' + needed);
+        if (data.all_completed) {
+          setTimeout(function() { updateProgress(); }, 300);
+        }
+      }
     } else {
       playSound('error');
       showOverlay('error', '👹', '不一致！', barcode + ' - 発注リストにありません');
-      addHistory(barcode, false, '');
+      addHistory(barcode, false, '', '発注リスト外');
     }
 
     renderItems();
@@ -462,19 +525,19 @@ async function stopCamera() {
 async function setMode(mode) {
   currentMode = mode;
   var btnCamera = document.getElementById('btn-camera');
-  var btnHid = document.getElementById('btn-hid');
+  var btnHid    = document.getElementById('btn-hid');
   var cameraDiv = document.getElementById('camera-mode');
-  var hidDiv = document.getElementById('hid-mode');
+  var hidDiv    = document.getElementById('hid-mode');
 
   if (mode === 'camera') {
     btnCamera.className = 'mode-btn active-camera';
-    btnHid.className = 'mode-btn inactive';
+    btnHid.className    = 'mode-btn inactive';
     cameraDiv.classList.remove('hidden');
     hidDiv.classList.add('hidden');
     await startCamera();
   } else {
     btnCamera.className = 'mode-btn inactive';
-    btnHid.className = 'mode-btn active-hid';
+    btnHid.className    = 'mode-btn active-hid';
     cameraDiv.classList.add('hidden');
     hidDiv.classList.remove('hidden');
     await stopCamera();
@@ -490,81 +553,121 @@ function renderItems() {
     return;
   }
   list.innerHTML = orderItems.map(function(item) {
-    var matched = item.barcode && inspectedBarcodes.has(item.barcode);
-    return '<div class="item-row ' + (matched ? 'matched' : 'missing') + '">' +
-      '<div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ' +
-        (matched ? 'bg-green-100 border-2 border-green-500' : 'bg-red-50 border-2 border-red-300') + '">' +
-        '<i class="fas ' + (matched ? 'fa-check text-green-600' : 'fa-times text-red-400') + ' text-sm"></i>' +
-      '</div>' +
-      '<div class="flex-1 min-w-0">' +
-        '<p class="font-semibold text-sm text-gray-800 truncate">' + (item.product_name || '') + '</p>' +
-        '<p class="text-xs text-gray-400">' + (item.brand || '') + ' / ' + item.quantity + (item.unit || '個') + '</p>' +
-        (item.barcode
-          ? '<p class="text-xs font-mono text-gray-400">' + item.barcode + '</p>'
-          : '<p class="text-xs text-yellow-600"><i class="fas fa-exclamation-triangle mr-1"></i>バーコードなし</p>') +
-      '</div>' +
-      '<span class="' + (matched ? 'badge-done' : 'badge-pending') + '">' +
-        (matched ? '<i class="fas fa-check mr-1"></i>済' : '未') +
-      '</span>' +
-    '</div>';
+    var scanned = item.barcode ? (scanCounts[item.barcode] || 0) : 0;
+    var needed  = item.quantity;
+    var rowClass = 'missing';
+    var badgeHtml = '';
+    var iconClass = 'fa-times text-red-400';
+    var iconBg    = 'bg-red-50 border-2 border-red-300';
+
+    if (scanned >= needed) {
+      rowClass  = 'matched';
+      iconClass = 'fa-check text-green-600';
+      iconBg    = 'bg-green-100 border-2 border-green-500';
+      badgeHtml = '<span class="badge-done"><i class="fas fa-check mr-1"></i>完了</span>';
+    } else if (scanned > 0) {
+      rowClass  = 'partial';
+      iconClass = 'fa-ellipsis-h text-yellow-600';
+      iconBg    = 'bg-yellow-50 border-2 border-yellow-400';
+      badgeHtml = '<span class="badge-partial">'+scanned+'/'+needed+'</span>';
+    } else {
+      badgeHtml = '<span class="badge-pending">未 (0/'+needed+')</span>';
+    }
+
+    return '<div class="item-row ' + rowClass + '">'
+      + '<div class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ' + iconBg + '">'
+        + '<i class="fas ' + iconClass + ' text-sm"></i>'
+      + '</div>'
+      + '<div class="flex-1 min-w-0">'
+        + '<p class="font-semibold text-sm text-gray-800 truncate">' + esc(item.product_name) + '</p>'
+        + '<div class="flex flex-wrap gap-x-2 gap-y-0 mt-0.5">'
+        + (item.category ? '<p class="text-xs text-gray-400">'+esc(item.category)+'</p>' : '')
+        + (item.supplier_name ? '<p class="text-xs text-gray-400">'+esc(item.supplier_name)+'</p>' : '')
+        + '</div>'
+        + (item.barcode
+          ? '<p class="text-xs font-mono text-gray-400">' + esc(item.barcode) + '</p>'
+          : '<p class="text-xs text-yellow-600"><i class="fas fa-exclamation-triangle mr-1"></i>バーコードなし</p>')
+      + '</div>'
+      + '<div class="flex flex-col items-end gap-1 flex-shrink-0">'
+        + badgeHtml
+        + '<span class="text-xs text-gray-400">発注数: <strong>'+needed+'</strong></span>'
+      + '</div>'
+      + '</div>';
   }).join('');
 }
 
 function updateProgress() {
-  var total = orderItems.filter(function(i){ return i.barcode; }).length;
-  var matched = orderItems.filter(function(i){ return i.barcode && inspectedBarcodes.has(i.barcode); }).length;
-  var pct = total > 0 ? Math.round(matched / total * 100) : 0;
+  // 進捗: 各アイテムの必要スキャン数の合計 vs 実際のスキャン合計
+  var totalNeeded = 0;
+  var totalScanned = 0;
+  var allDone = true;
 
-  document.getElementById('progress-text').textContent = matched + '/' + total;
+  orderItems.forEach(function(item) {
+    if (!item.barcode) return; // バーコードなし商品は検品対象外
+    var needed  = item.quantity;
+    var scanned = Math.min(scanCounts[item.barcode] || 0, needed);
+    totalNeeded  += needed;
+    totalScanned += scanned;
+    if (scanned < needed) allDone = false;
+  });
+
+  var hasItems = totalNeeded > 0;
+  if (!hasItems) allDone = false;
+
+  var pct = hasItems ? Math.round(totalScanned / totalNeeded * 100) : 0;
+
+  document.getElementById('progress-text').textContent = totalScanned + '/' + totalNeeded;
   document.getElementById('progress-bar').style.width = pct + '%';
 
-  var allDone = total > 0 && matched === total;
-  var btn = document.getElementById('complete-btn');
-  var hint = document.getElementById('complete-hint');
+  var btn   = document.getElementById('complete-btn');
+  var hint  = document.getElementById('complete-hint');
   var phint = document.getElementById('progress-hint');
 
   if (allDone) {
-    btn.disabled = false;
+    btn.disabled  = false;
     btn.className = 'complete-btn-active';
-    hint.innerHTML = '<i class="fas fa-check-circle mr-1 text-green-500"></i>全品スキャン完了！出荷完了にできます';
+    hint.innerHTML = '<i class="fas fa-check-circle mr-1 text-green-500"></i>全商品の数量スキャン完了！検品完了にできます';
     hint.className = 'text-center text-xs text-green-600 mt-2 font-semibold';
-    phint.textContent = '完了！全品スキャン済み';
-    phint.className = 'text-xs text-green-600 mt-2 text-right font-semibold';
+    phint.textContent = '完了！全数スキャン済み';
+    phint.className   = 'text-xs text-green-600 mt-2 text-right font-semibold';
   } else {
-    btn.disabled = true;
+    btn.disabled  = true;
     btn.className = 'complete-btn-disabled';
-    hint.textContent = '残り' + (total - matched) + '点のスキャンが必要です';
-    hint.className = 'text-center text-xs text-gray-400 mt-2';
+    hint.textContent = '残り ' + (totalNeeded - totalScanned) + ' 点のスキャンが必要です';
+    hint.className   = 'text-center text-xs text-gray-400 mt-2';
     phint.textContent = pct + '% 完了';
-    phint.className = 'text-xs text-gray-400 mt-2 text-right';
+    phint.className   = 'text-xs text-gray-400 mt-2 text-right';
   }
 }
 
-function addHistory(barcode, isMatch, productName) {
-  scanHistory.unshift({ barcode: barcode, isMatch: isMatch, productName: productName || '', time: new Date() });
-  var el = document.getElementById('scan-history');
+function addHistory(barcode, isMatch, productName, note) {
+  scanHistory.unshift({ barcode: barcode, isMatch: isMatch, productName: productName || '', note: note || '', time: new Date() });
+  var el    = document.getElementById('scan-history');
   var empty = document.getElementById('history-empty');
   empty.classList.add('hidden');
   el.innerHTML = scanHistory.slice(0, 20).map(function(h) {
-    return '<div class="history-row ' + (h.isMatch ? 'ok' : 'ng') + '">' +
-      '<i class="fas ' + (h.isMatch ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-400') + '"></i>' +
-      '<span class="font-mono flex-1 truncate text-gray-700">' + h.barcode + '</span>' +
-      (h.productName ? '<span class="text-gray-400 truncate" style="max-width:120px">' + h.productName + '</span>' : '') +
-      '<span class="text-gray-300 flex-shrink-0">' + h.time.toLocaleTimeString('ja-JP') + '</span>' +
-    '</div>';
+    return '<div class="history-row ' + (h.isMatch ? 'ok' : 'ng') + '">'
+      + '<i class="fas ' + (h.isMatch ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-400') + '"></i>'
+      + '<span class="font-mono flex-1 truncate text-gray-700">' + esc(h.barcode) + '</span>'
+      + (h.productName ? '<span class="text-gray-400 truncate" style="max-width:100px">' + esc(h.productName) + '</span>' : '')
+      + (h.note ? '<span class="text-xs text-yellow-600 flex-shrink-0">' + esc(h.note) + '</span>' : '')
+      + '<span class="text-gray-300 flex-shrink-0">' + h.time.toLocaleTimeString('ja-JP') + '</span>'
+      + '</div>';
   }).join('');
 }
 
-// ============ オーバーレイ ============
+// ============ オーバーレイ（大型顔表示） ============
 var overlayTimer = null;
 function showOverlay(type, face, text, sub) {
   var overlay = document.getElementById('result-overlay');
   document.getElementById('result-face').textContent = face;
   document.getElementById('result-text').textContent = text;
-  document.getElementById('result-sub').textContent = sub;
+  document.getElementById('result-sub').textContent  = sub;
   overlay.className = 'result-overlay show ' + type;
   if (overlayTimer) clearTimeout(overlayTimer);
-  overlayTimer = setTimeout(function() { overlay.className = 'result-overlay'; }, 1500);
+  // 成功は1.2秒、エラーは1.8秒表示
+  var duration = (type === 'success') ? 1200 : 1800;
+  overlayTimer = setTimeout(function() { overlay.className = 'result-overlay'; }, duration);
 }
 
 // ============ サウンド ============
@@ -580,46 +683,63 @@ function playSound(type) {
       osc.frequency.setValueAtTime(1320, ctx.currentTime + 0.1);
       gain.gain.setValueAtTime(0.3, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.3);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.3);
+    } else if (type === 'warn') {
+      osc.frequency.setValueAtTime(600, ctx.currentTime);
+      osc.frequency.setValueAtTime(400, ctx.currentTime + 0.15);
+      osc.type = 'triangle';
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
     } else {
       osc.frequency.setValueAtTime(220, ctx.currentTime);
       osc.frequency.setValueAtTime(160, ctx.currentTime + 0.1);
       osc.type = 'sawtooth';
       gain.gain.setValueAtTime(0.3, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.4);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
     }
   } catch(e) {}
 }
 
-// ============ 出荷完了 ============
-function completeShipment() {
+// ============ 検品完了 ============
+function completeInspection() {
   document.getElementById('complete-modal').classList.remove('hidden');
 }
 
 async function confirmComplete() {
   document.getElementById('complete-modal').classList.add('hidden');
   try {
-    var res = await apiFetch('/api/admin/orders/' + ORDER_ID + '/status', {
-      method: 'PUT',
-      body: JSON.stringify({ status: 'shipped' }),
+    // 検品完了APIを呼び出す（admin.tsの /start-inspection → inspecting → all完了でcompleted）
+    var res = await apiFetch('/api/admin/orders/' + ORDER_ID + '/complete-inspection', {
+      method: 'POST'
     });
     if (res.ok) {
-      showOverlay('success', '🚀', '出荷完了！', 'ステータスを更新しました');
+      showOverlay('success', '🎉', '検品完了！', 'ステータスを更新しました');
       setTimeout(function() { window.location.href = '/admin'; }, 1800);
+    } else {
+      // フォールバック: statusを直接completed に
+      var res2 = await apiFetch('/api/admin/orders/' + ORDER_ID + '/status', {
+        method: 'PUT',
+        body: JSON.stringify({ status: 'completed' }),
+      });
+      if (res2.ok) {
+        showOverlay('success', '🎉', '検品完了！', 'ステータスを更新しました');
+        setTimeout(function() { window.location.href = '/admin'; }, 1800);
+      } else {
+        alert('エラーが発生しました');
+      }
     }
   } catch(e) {
-    alert('エラーが発生しました');
+    alert('エラーが発生しました: ' + e.message);
   }
 }
 
 async function resetInspection() {
-  if (!confirm('検品ログをリセットしますか？')) return;
+  if (!confirm('検品ログをリセットしますか？\\nスキャン済み数量がすべてリセットされます。')) return;
   try {
     await apiFetch('/api/admin/orders/' + ORDER_ID + '/inspections', { method: 'DELETE' });
-    inspectedBarcodes = new Set();
+    scanCounts = {};
     scanHistory = [];
     document.getElementById('scan-history').innerHTML = '';
     document.getElementById('history-empty').classList.remove('hidden');
@@ -630,9 +750,7 @@ async function resetInspection() {
   }
 }
 
-function cleanup() {
-  stopCamera();
-}
+function cleanup() { stopCamera(); }
 
 // ============ ユーティリティ ============
 async function apiFetch(url, opts) {
@@ -641,6 +759,11 @@ async function apiFetch(url, opts) {
   if (opts.headers) Object.assign(headers, opts.headers);
   if (adminToken) headers['Authorization'] = 'Bearer ' + adminToken;
   return fetch(url, Object.assign({}, opts, { headers: headers }));
+}
+
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 window.addEventListener('beforeunload', function() { stopCamera(); });
