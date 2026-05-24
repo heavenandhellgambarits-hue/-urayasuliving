@@ -330,6 +330,12 @@ var scanHistory = [];
 var html5QrCode = null;
 var currentMode = 'camera';
 var hidBuffer = '';
+// 同時スキャン防止フラグ（async processScan の二重実行を防ぐ）
+var _scanProcessing = false;
+// カメラ連続検出防止: {barcode: lastDetectedTimestamp}
+var _lastCameraDetect = {};
+// 同一バーコードを再スキャン可能にするまでのクールダウン(ms)
+var CAMERA_COOLDOWN_MS = 1500;
 
 // ============ カラーテーマ ============
 var THEMES_INSP = {
@@ -417,6 +423,10 @@ async function loadOrder() {
 async function processScan(barcode) {
   barcode = barcode.trim();
   if (!barcode) return;
+  // 前のスキャン処理が完了するまで新しいスキャンを受け付けない
+  // （カメラが連続してコールバックを呼ぶ際の2明細目以降の取りこぼし防止）
+  if (_scanProcessing) return;
+  _scanProcessing = true;
 
   try {
     var res = await apiFetch('/api/admin/orders/' + ORDER_ID + '/inspect', {
@@ -457,6 +467,9 @@ async function processScan(barcode) {
     updateProgress();
   } catch(e) {
     console.error(e);
+  } finally {
+    // 成功・失敗・例外いずれの場合も必ずフラグを解放する
+    _scanProcessing = false;
   }
 }
 
@@ -504,7 +517,15 @@ async function startCamera() {
     await html5QrCode.start(
       { deviceId: backCam.id },
       { fps: 10, qrbox: { width: 280, height: 180 } },
-      function(decodedText) { processScan(decodedText); },
+      function(decodedText) {
+        // 同一バーコードを CAMERA_COOLDOWN_MS ms 以内に再検出しても無視
+        // （カメラが1つのバーコードを連続フレームで読み続けるのを防ぐ）
+        var now = Date.now();
+        var last = _lastCameraDetect[decodedText] || 0;
+        if (now - last < CAMERA_COOLDOWN_MS) return;
+        _lastCameraDetect[decodedText] = now;
+        processScan(decodedText);
+      },
       function() {}
     );
     status.innerHTML = '<i class="fas fa-circle text-green-500 mr-1"></i>スキャン待機中...';

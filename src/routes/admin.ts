@@ -472,8 +472,10 @@ admin.post('/orders/:id/inspect', async (c) => {
     const scannedCount: Record<string, number> = {};
     for (const l of logs) scannedCount[l.barcode_scanned] = (scannedCount[l.barcode_scanned]||0) + 1;
 
-    // 全商品の発注数 <= スキャン数か確認
-    allCompleted = allItems.every((it: any) => (scannedCount[it.barcode]||0) >= it.quantity);
+    // 全商品の発注数 <= スキャン数か確認（バーコードなし商品はスキップ）
+    const barcodeItems = allItems.filter((it: any) => it.barcode && it.barcode.trim() !== '');
+    allCompleted = barcodeItems.length > 0 &&
+      barcodeItems.every((it: any) => (scannedCount[it.barcode]||0) >= it.quantity);
 
     if (allCompleted) {
       // 検品中ステータスに自動遷移
