@@ -52,8 +52,8 @@ body{background:linear-gradient(135deg,var(--p-bg1) 0%,var(--p-bg2) 100%);min-he
   background:rgba(255,255,255,.9);transition:border-color .2s,box-shadow .2s;width:100%;font-size:.9rem;color:#111827;}
 .form-input:focus,.form-select:focus{outline:none;border-color:var(--p1);box-shadow:0 0 0 3px var(--p-focus-ring);}
 label{color:#1f2937!important;font-weight:600;}
-.nav-item{padding:10px 14px;border-radius:10px;cursor:pointer;transition:all .2s;
-  display:flex;align-items:center;gap:10px;font-size:.875rem;font-weight:600;color:#1f2937;}
+.nav-item{padding:7px 10px;border-radius:8px;cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;gap:8px;font-size:.8rem;font-weight:600;color:#1f2937;}
 .nav-item:hover{background:var(--p-nav-hover-bg);color:var(--p2);}
 .nav-item.active{background:var(--p1);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.15);}
 .drawer .nav-item{color:rgba(255,255,255,.85);}
@@ -66,8 +66,8 @@ label{color:#1f2937!important;font-weight:600;}
 .s-completed{background:#d1e7dd;color:#0a3622;}
 .s-cancel_request{background:#ffe4cc;color:#7c2d12;}
 .s-cancelled{background:#f8d7da;color:#842029;}
-th{padding:10px 12px;text-align:left;font-size:.75rem;font-weight:700;color:var(--p-title);white-space:nowrap;}
-td{padding:8px 10px;font-size:.83rem;border-bottom:1px solid var(--p-tbl-border);color:#1f2937;font-weight:500;}
+th{padding:6px 8px;text-align:left;font-size:.72rem;font-weight:700;color:var(--p-title);white-space:nowrap;}
+td{padding:5px 7px;font-size:.78rem;border-bottom:1px solid var(--p-tbl-border);color:#1f2937;font-weight:500;}
 tr:hover td{background:var(--p-hover-row);}
 .tbl-header{background:linear-gradient(135deg,var(--p-tbl-bg1),var(--p-tbl-bg2));}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;
@@ -108,8 +108,8 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
 .p-accent{color:var(--p2);font-weight:700;}
 .p-accent-link{color:var(--p2);font-weight:700;cursor:pointer;}
 .p-accent-link:hover{text-decoration:underline;opacity:.85;}
-.sidebar-section-label{font-size:.7rem;font-weight:700;color:#6b7280;
-  letter-spacing:.08em;text-transform:uppercase;padding:12px 14px 4px;}
+.sidebar-section-label{font-size:.65rem;font-weight:700;color:#6b7280;
+  letter-spacing:.08em;text-transform:uppercase;padding:8px 10px 3px;}
 .modal-label{font-size:.78rem;font-weight:600;color:#1f2937;margin-bottom:4px;}
 .meta-text{font-size:.78rem;color:#4b5563;}
 .stat-label{font-size:.75rem;font-weight:600;color:#374151;margin-bottom:4px;}
@@ -186,15 +186,15 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
 <!-- メイン -->
 <div id="mainPage" class="hidden flex">
   <!-- サイドバー(デスクトップ) -->
-  <aside class="sidebar-desktop w-56 flex-shrink-0 min-h-screen p-3 sticky top-0 self-start" style="max-height:100vh;overflow-y:auto;">
-    <div class="card p-3 mb-3">
+  <aside class="sidebar-desktop w-44 flex-shrink-0 min-h-screen p-2 sticky top-0 self-start" style="max-height:100vh;overflow-y:auto;">
+    <div class="card p-2 mb-2">
       <div class="flex items-center gap-2">
-        <div style="background:linear-gradient(135deg,#5d8464,#3d6444);width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;">
-          <i class="fas fa-box text-white text-sm"></i>
+        <div style="background:linear-gradient(135deg,#5d8464,#3d6444);width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fas fa-box text-white" style="font-size:.7rem;"></i>
         </div>
-        <div>
-          <p id="sidebarSiteName" class="font-bold text-gray-800 text-sm leading-tight">OrderFlow</p>
-          <p class="text-xs text-gray-500">管理者画面</p>
+        <div class="min-w-0">
+          <p id="sidebarSiteName" class="font-bold text-gray-800 text-xs leading-tight truncate">OrderFlow</p>
+          <p class="text-gray-500" style="font-size:.65rem;">管理者画面</p>
         </div>
       </div>
     </div>
@@ -215,7 +215,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
   </aside>
 
   <!-- コンテンツエリア -->
-  <div class="flex-1 min-w-0 p-4 md:p-5 content-area">
+  <div class="flex-1 min-w-0 p-3 md:p-4 content-area">
     <header class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-3">
         <button class="mobile-menu-btn btn-s p-2 px-3" onclick="openDrawer()"><i class="fas fa-bars"></i></button>
@@ -278,23 +278,23 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
           <button onclick="clearProductSelection()" class="btn-sm btn-sm-gray"><i class="fas fa-times mr-1"></i>選択解除</button>
         </div>
         <div class="overflow-x-auto">
-          <table class="w-full text-xs">
+          <table class="w-full" style="font-size:.72rem;">
             <thead class="tbl-header">
               <tr>
-                <th class="w-8 text-center"><input type="checkbox" id="productSelAll" onchange="toggleAllProducts(this.checked)" class="cursor-pointer"></th>
+                <th class="w-6 text-center px-1"><input type="checkbox" id="productSelAll" onchange="toggleAllProducts(this.checked)" class="cursor-pointer"></th>
                 <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('category')">カテゴリ<span class="sort-icon" id="psh-category"></span></th>
-                <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('unified_code')">統一コード<span class="sort-icon" id="psh-unified_code"></span></th>
-                <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('gift_code')">ギフトコード<span class="sort-icon" id="psh-gift_code"></span></th>
+                <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('unified_code')">統一CD<span class="sort-icon" id="psh-unified_code"></span></th>
+                <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('gift_code')">ギフトCD<span class="sort-icon" id="psh-gift_code"></span></th>
                 <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('product_name')">商品名<span class="sort-icon" id="psh-product_name"></span></th>
                 <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('product_code')">商品記号<span class="sort-icon" id="psh-product_code"></span></th>
                 <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('barcode')">バーコード<span class="sort-icon" id="psh-barcode"></span></th>
-                <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('supplier_code')">仕入先コード<span class="sort-icon" id="psh-supplier_code"></span></th>
+                <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('supplier_code')">仕入先CD<span class="sort-icon" id="psh-supplier_code"></span></th>
                 <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('supplier_name')">仕入先名<span class="sort-icon" id="psh-supplier_name"></span></th>
-                <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('stock_location')">ストック場所<span class="sort-icon" id="psh-stock_location"></span></th>
+                <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('stock_location')">場所<span class="sort-icon" id="psh-stock_location"></span></th>
                 <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('stock_ku')">区<span class="sort-icon" id="psh-stock_ku"></span></th>
                 <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('stock_banchi')">番地<span class="sort-icon" id="psh-stock_banchi"></span></th>
                 <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('is_active')">状態<span class="sort-icon" id="psh-is_active"></span></th>
-                <th>操作</th>
+                <th class="px-1">操作</th>
               </tr>
             </thead>
             <tbody id="productsTbody"></tbody>
@@ -900,11 +900,11 @@ function _renderProducts(prods) {
   }
   tbody.innerHTML = prods.map(function(p) {
     return '<tr class="product-row" data-id="' + p.id + '">'
-      + '<td class="text-center"><input type="checkbox" class="product-chk cursor-pointer" data-id="' + p.id + '" onchange="onProductChkChange()"></td>'
-      + '<td><span class="sbadge s-completed">' + (p.category||'-') + '</span></td>'
+      + '<td class="text-center px-1"><input type="checkbox" class="product-chk cursor-pointer" data-id="' + p.id + '" onchange="onProductChkChange()"></td>'
+      + '<td><span class="sbadge s-completed" style="padding:2px 6px;font-size:.65rem;">' + (p.category||'-') + '</span></td>'
       + '<td class="font-mono">' + (p.unified_code||'-') + '</td>'
       + '<td class="font-mono font-bold p-accent">' + (p.gift_code||'-') + '</td>'
-      + '<td class="font-medium">' + (p.is_new ? '<span class="new-badge">NEW</span> ' : '') + p.product_name + '</td>'
+      + '<td>' + (p.is_new ? '<span class="new-badge">N</span> ' : '') + p.product_name + '</td>'
       + '<td class="font-mono text-gray-600">' + (p.product_code||'-') + '</td>'
       + '<td class="font-mono text-gray-600">' + (p.barcode||'-') + '</td>'
       + '<td class="font-mono text-gray-600">' + (p.supplier_code||'-') + '</td>'
@@ -912,10 +912,10 @@ function _renderProducts(prods) {
       + '<td>' + (p.stock_location||'-') + '</td>'
       + '<td class="text-center font-mono">' + (p.stock_ku!=null && p.stock_ku!=='' ? String(p.stock_ku) : '-') + '</td>'
       + '<td class="text-center font-mono">' + (p.stock_banchi!=null && p.stock_banchi!=='' ? String(p.stock_banchi) : '-') + '</td>'
-      + '<td><span class="sbadge ' + (p.is_active ? 's-completed' : 's-cancelled') + '">' + (p.is_active ? '有効' : '無効') + '</span></td>'
-      + '<td class="flex items-center gap-1">'
-      + '<button onclick="openProductModal(' + p.id + ')" class="text-xs btn-s py-1 px-2"><i class="fas fa-edit"></i></button>'
-      + '<button onclick="deleteProduct(' + p.id + ')" class="btn-d"><i class="fas fa-trash"></i></button>'
+      + '<td><span class="sbadge ' + (p.is_active ? 's-completed' : 's-cancelled') + '" style="padding:2px 6px;font-size:.65rem;">' + (p.is_active ? '有効' : '無効') + '</span></td>'
+      + '<td class="px-1" style="white-space:nowrap;">'
+      + '<button onclick="openProductModal(' + p.id + ')" style="font-size:.65rem;padding:2px 6px;" class="btn-s"><i class="fas fa-edit"></i></button>'
+      + '<button onclick="deleteProduct(' + p.id + ')" style="font-size:.65rem;padding:2px 6px;" class="btn-d"><i class="fas fa-trash"></i></button>'
       + '</td></tr>';
   }).join('');
   // 全選チェックとバーをリセット
