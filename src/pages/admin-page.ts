@@ -924,7 +924,7 @@ async function saveProduct() {
 }
 
 async function deleteProduct(id) {
-  if (!confirm('この商品をマスタから完全に削除しますか？\nこの操作は元に戻せません。')) return;
+  if (!confirm('この商品をマスタから完全に削除しますか？\\nこの操作は元に戻せません。')) return;
   var res = await apiFetch('/api/admin/products/' + id, {method:'DELETE'});
   if (res.ok) { showToast('削除しました'); loadProducts(); }
   else showToast('削除に失敗しました', 'error');
