@@ -556,21 +556,21 @@ var sortCol = '';
 var sortDir = 'asc';
 
 // ============ JST変換 ============
+// DBにはnowJST()でJST値がそのまま保存されている（例:"2026-05-24 13:07:19"）
+// → Zを付けずそのままパースすることで正しいJST表示になる
 function fmtJST(s) {
   if (!s) return '-';
   try {
-    // DBの値がUTC文字列の場合: "2026-05-23 10:00:00" → Zを付けてパース
-    var str = s.replace(' ', 'T');
-    if (!str.endsWith('Z') && !str.includes('+')) str += 'Z';
+    var str = String(s).replace(' ', 'T');
     var d = new Date(str);
-    var jst = new Date(d.getTime() + 9 * 3600 * 1000);
-    var Y = jst.getUTCFullYear();
-    var M = String(jst.getUTCMonth()+1).padStart(2,'0');
-    var D = String(jst.getUTCDate()).padStart(2,'0');
-    var h = String(jst.getUTCHours()).padStart(2,'0');
-    var m = String(jst.getUTCMinutes()).padStart(2,'0');
+    if (isNaN(d.getTime())) return String(s);
+    var Y = d.getFullYear();
+    var M = String(d.getMonth()+1).padStart(2,'0');
+    var D = String(d.getDate()).padStart(2,'0');
+    var h = String(d.getHours()).padStart(2,'0');
+    var m = String(d.getMinutes()).padStart(2,'0');
     return Y+'/'+M+'/'+D+' '+h+':'+m;
-  } catch(e) { return s; }
+  } catch(e) { return String(s); }
 }
 
 function fmtDateOnly(s) {

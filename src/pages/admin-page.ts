@@ -620,26 +620,27 @@ async function apiFetch(url, opts) {
 }
 
 // ========== 日付フォーマット（日本時間） ==========
+// DBにはnowJST()でJST値がそのまま保存されている（例:"2026-05-24 13:07:19"）
+// → Zを付けずにそのままパースすることで正しいJST表示になる
 function fmtJST(dt) {
   if (!dt) return '-';
-  // DBはUTCで保存、+9時間変換
-  var d = new Date(dt.replace(' ','T') + 'Z');
-  if (isNaN(d.getTime())) { d = new Date(dt); }
-  var off = 9 * 60;
-  var jst = new Date(d.getTime() + off * 60000);
-  var y = jst.getUTCFullYear();
-  var mo = String(jst.getUTCMonth()+1).padStart(2,'0');
-  var day = String(jst.getUTCDate()).padStart(2,'0');
-  var h = String(jst.getUTCHours()).padStart(2,'0');
-  var mi = String(jst.getUTCMinutes()).padStart(2,'0');
-  return y + '/' + mo + '/' + day + ' ' + h + ':' + mi;
+  // スペース区切りをTに統一。末尾にZやオフセットがなければJSTとして扱う
+  var s = String(dt).replace(' ', 'T');
+  var d = new Date(s);
+  if (isNaN(d.getTime())) return String(dt);
+  var y  = d.getFullYear();
+  var mo = String(d.getMonth()+1).padStart(2,'0');
+  var dy = String(d.getDate()).padStart(2,'0');
+  var h  = String(d.getHours()).padStart(2,'0');
+  var mi = String(d.getMinutes()).padStart(2,'0');
+  return y + '/' + mo + '/' + dy + ' ' + h + ':' + mi;
 }
 function fmtDateJST(dt) {
   if (!dt) return '-';
-  var d = new Date(dt.replace(' ','T') + 'Z');
-  if (isNaN(d.getTime())) { d = new Date(dt); }
-  var jst = new Date(d.getTime() + 9 * 3600000);
-  return jst.getUTCFullYear() + '/' + String(jst.getUTCMonth()+1).padStart(2,'0') + '/' + String(jst.getUTCDate()).padStart(2,'0');
+  var s = String(dt).replace(' ', 'T');
+  var d = new Date(s);
+  if (isNaN(d.getTime())) return String(dt);
+  return d.getFullYear() + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + String(d.getDate()).padStart(2,'0');
 }
 
 // ========== ステータス ==========
