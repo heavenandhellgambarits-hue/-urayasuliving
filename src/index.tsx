@@ -36,7 +36,11 @@ app.get('/admin/inspection/:orderId', async (c) => {
 });
 
 // Admin SPA
-app.get('/admin*', async (c) => {
+app.get('/admin', async (c) => {
+  const { getAdminPage } = await import('./pages/admin-page');
+  return c.html(getAdminPage());
+});
+app.get('/admin/*', async (c) => {
   const { getAdminPage } = await import('./pages/admin-page');
   return c.html(getAdminPage());
 });
