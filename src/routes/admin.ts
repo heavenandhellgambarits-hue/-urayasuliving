@@ -243,11 +243,11 @@ admin.post('/products/import', async (c) => {
     const supplier_code = r['仕入先コード']    || r.supplier_code  || '';
     const supplier_name = r['仕入先名']        || r.supplier_name  || '';
     const stock_location= r['ストック場所']    || r.stock_location || '';
-    // stock_ku / stock_banchi は数値カラムなのでパース（文字列 '01' 等でも対応）
+    // stock_ku / stock_banchi は TEXT カラム（先頭0を保持するため文字列のまま保存）
     const rawKu      = r['区']     ?? r.stock_ku     ?? null;
     const rawBanchi  = r['番地']   ?? r.stock_banchi ?? null;
-    const stock_ku     = (rawKu     !== '' && rawKu     != null) ? (parseInt(String(rawKu),10)     || null) : null;
-    const stock_banchi = (rawBanchi !== '' && rawBanchi != null) ? (parseInt(String(rawBanchi),10) || null) : null;
+    const stock_ku     = (rawKu     !== '' && rawKu     != null) ? String(rawKu).trim()     || null : null;
+    const stock_banchi = (rawBanchi !== '' && rawBanchi != null) ? String(rawBanchi).trim() || null : null;
     // 全コード系フィールドは文字列として保存（先頭0・小数点を除去した整数文字列にする）
     const toStr = (v: unknown) => {
       if (v == null || v === '') return '';
@@ -265,7 +265,7 @@ admin.post('/products/import', async (c) => {
     ).bind(
       toStr(category), product_name, toStr(product_code), toStr(barcode),
       toStr(gift_code), toStr(unified_code), toStr(supplier_code), toStr(supplier_name),
-      toStr(stock_location), stock_ku, stock_banchi, jst, jst
+      toStr(stock_location), stock_ku, stock_banchi, jst, jst  // stock_ku/banchi は文字列のまま渡す
     ).run();
     count++;
   }

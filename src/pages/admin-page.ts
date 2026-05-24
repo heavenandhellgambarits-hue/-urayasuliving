@@ -449,8 +449,8 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
       <div class="col-span-2"><label class="block text-sm mb-1">仕入先名</label><input id="pSupplierName" type="text" class="form-input"></div>
       <div><label class="block text-sm mb-1">ストック場所</label><input id="pStockLocation" type="text" class="form-input" placeholder="倉庫A"></div>
       <div class="grid grid-cols-2 gap-2">
-        <div><label class="block text-sm mb-1">区（半角数字）</label><input id="pStockKu" type="number" class="form-input" placeholder="1" min="0"></div>
-        <div><label class="block text-sm mb-1">番地（半角数字）</label><input id="pStockBanchi" type="number" class="form-input" placeholder="10" min="0"></div>
+        <div><label class="block text-sm mb-1">区</label><input id="pStockKu" type="text" class="form-input" placeholder="01"></div>
+        <div><label class="block text-sm mb-1">番地</label><input id="pStockBanchi" type="text" class="form-input" placeholder="001"></div>
       </div>
       <div class="flex items-center gap-3">
         <label class="toggle-switch"><input type="checkbox" id="pActive" checked><span class="toggle-slider"></span></label>
@@ -910,8 +910,8 @@ function _renderProducts(prods) {
       + '<td class="font-mono text-gray-600">' + (p.supplier_code||'-') + '</td>'
       + '<td>' + (p.supplier_name||'-') + '</td>'
       + '<td>' + (p.stock_location||'-') + '</td>'
-      + '<td class="text-center">' + (p.stock_ku!=null ? p.stock_ku : '-') + '</td>'
-      + '<td class="text-center">' + (p.stock_banchi!=null ? p.stock_banchi : '-') + '</td>'
+      + '<td class="text-center font-mono">' + (p.stock_ku!=null && p.stock_ku!=='' ? String(p.stock_ku) : '-') + '</td>'
+      + '<td class="text-center font-mono">' + (p.stock_banchi!=null && p.stock_banchi!=='' ? String(p.stock_banchi) : '-') + '</td>'
       + '<td><span class="sbadge ' + (p.is_active ? 's-completed' : 's-cancelled') + '">' + (p.is_active ? '有効' : '無効') + '</span></td>'
       + '<td class="flex items-center gap-1">'
       + '<button onclick="openProductModal(' + p.id + ')" class="text-xs btn-s py-1 px-2"><i class="fas fa-edit"></i></button>'
@@ -1052,8 +1052,8 @@ async function saveProduct() {
     supplier_code: document.getElementById('pSupplierCode').value,
     supplier_name: document.getElementById('pSupplierName').value,
     stock_location: document.getElementById('pStockLocation').value,
-    stock_ku: document.getElementById('pStockKu').value ? parseInt(document.getElementById('pStockKu').value) : null,
-    stock_banchi: document.getElementById('pStockBanchi').value ? parseInt(document.getElementById('pStockBanchi').value) : null,
+    stock_ku: document.getElementById('pStockKu').value.trim() || null,
+    stock_banchi: document.getElementById('pStockBanchi').value.trim() || null,
     is_active: document.getElementById('pActive').checked ? 1 : 0,
     is_new: document.getElementById('pNew').checked ? 1 : 0,
   };
