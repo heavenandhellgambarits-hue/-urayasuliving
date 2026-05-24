@@ -216,13 +216,18 @@ admin.delete('/products/:id', async (c) => {
 });
 
 // 商品一括削除
+// D1 は bind() のバインド変数が最大99個のため、100件以上の場合は99件ずつチャンクに分割して実行
 admin.post('/products/bulk-delete', async (c) => {
   const { ids } = await c.req.json();
   if (!Array.isArray(ids) || ids.length === 0) return c.json({ error: '削除対象がありません' }, 400);
   const safeIds = ids.map((v: any) => parseInt(v, 10)).filter((v) => !isNaN(v));
   if (safeIds.length === 0) return c.json({ error: '有効なIDがありません' }, 400);
-  const placeholders = safeIds.map(() => '?').join(',');
-  await c.env.DB.prepare(`DELETE FROM products WHERE id IN (${placeholders})`).bind(...safeIds).run();
+  const CHUNK = 99;
+  for (let i = 0; i < safeIds.length; i += CHUNK) {
+    const chunk = safeIds.slice(i, i + CHUNK);
+    const placeholders = chunk.map(() => '?').join(',');
+    await c.env.DB.prepare(`DELETE FROM products WHERE id IN (${placeholders})`).bind(...chunk).run();
+  }
   return c.json({ deleted: safeIds.length });
 });
 
