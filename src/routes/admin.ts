@@ -182,7 +182,8 @@ admin.put('/products/:id', async (c) => {
 
 admin.delete('/products/:id', async (c) => {
   const id = c.req.param('id');
-  await c.env.DB.prepare('UPDATE products SET is_active=0 WHERE id=?').bind(id).run();
+  // order_items は product_id を参照しているが削除は許可（履歴は残す）
+  await c.env.DB.prepare('DELETE FROM products WHERE id=?').bind(id).run();
   return c.json({ success: true });
 });
 
@@ -203,8 +204,19 @@ admin.post('/products/import', async (c) => {
     const supplier_code = r['仕入先コード']    || r.supplier_code  || '';
     const supplier_name = r['仕入先名']        || r.supplier_name  || '';
     const stock_location= r['ストック場所']    || r.stock_location || '';
-    const stock_ku      = r['区']              ?? r.stock_ku       ?? null;
-    const stock_banchi  = r['番地']            ?? r.stock_banchi   ?? null;
+    // stock_ku / stock_banchi は数値カラムなのでパース（文字列 '01' 等でも対応）
+    const rawKu      = r['区']     ?? r.stock_ku     ?? null;
+    const rawBanchi  = r['番地']   ?? r.stock_banchi ?? null;
+    const stock_ku     = (rawKu     !== '' && rawKu     != null) ? (parseInt(String(rawKu),10)     || null) : null;
+    const stock_banchi = (rawBanchi !== '' && rawBanchi != null) ? (parseInt(String(rawBanchi),10) || null) : null;
+    // 全コード系フィールドは文字列として保存（先頭0・小数点を除去した整数文字列にする）
+    const toStr = (v: unknown) => {
+      if (v == null || v === '') return '';
+      const s = String(v).trim();
+      // "12345.0" → "12345" に正規化
+      if (/^\d+\.0+$/.test(s)) return String(parseInt(s, 10));
+      return s;
+    };
     if (!product_name) continue;
     await c.env.DB.prepare(
       `INSERT OR REPLACE INTO products
@@ -212,9 +224,9 @@ admin.post('/products/import', async (c) => {
          supplier_code, supplier_name, stock_location, stock_ku, stock_banchi, is_active, registered_at, updated_at)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,1,?,?)`
     ).bind(
-      category, product_name, product_code, barcode,
-      gift_code, unified_code, supplier_code, supplier_name,
-      stock_location, stock_ku||null, stock_banchi||null, jst, jst
+      toStr(category), product_name, toStr(product_code), toStr(barcode),
+      toStr(gift_code), toStr(unified_code), toStr(supplier_code), toStr(supplier_name),
+      toStr(stock_location), stock_ku, stock_banchi, jst, jst
     ).run();
     count++;
   }

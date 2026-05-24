@@ -924,16 +924,21 @@ async function saveProduct() {
 }
 
 async function deleteProduct(id) {
-  if (!confirm('この商品を無効にしますか？')) return;
-  await apiFetch('/api/admin/products/' + id, {method:'DELETE'});
-  showToast('無効にしました'); loadProducts();
+  if (!confirm('この商品をマスタから完全に削除しますか？\nこの操作は元に戻せません。')) return;
+  var res = await apiFetch('/api/admin/products/' + id, {method:'DELETE'});
+  if (res.ok) { showToast('削除しました'); loadProducts(); }
+  else showToast('削除に失敗しました', 'error');
 }
+
+// ========== 文字列セル生成ヘルパー（先頭0保持） ==========
+function strCell(v) { return { t:'s', v: v == null ? '' : String(v) }; }
 
 // ========== Excel テンプレート出力 ==========
 function downloadProductTemplate() {
   var wb = XLSX.utils.book_new();
   var headers = ['カテゴリ','統一コード','ギフトコード','商品名','商品記号','バーコード','仕入先コード','仕入先名','ストック場所','区','番地'];
-  var ws = XLSX.utils.aoa_to_sheet([headers]);
+  // ヘッダー行も文字列セルで出力
+  var ws = XLSX.utils.aoa_to_sheet([headers.map(function(h){ return strCell(h); })]);
   XLSX.utils.book_append_sheet(wb, ws, '商品マスタ');
   XLSX.writeFile(wb, '商品マスタテンプレート.xlsx');
 }
@@ -942,12 +947,26 @@ function downloadProductTemplate() {
 async function exportProducts() {
   var data = await (await apiFetch('/api/admin/products')).json();
   var prods = data.products || [];
-  var rows = [['カテゴリ','統一コード','ギフトコード','商品名','商品記号','バーコード','仕入先コード','仕入先名','ストック場所','区','番地','状態']];
-  prods.forEach(function(p) {
-    rows.push([p.category||'', p.unified_code||'', p.gift_code||'', p.product_name, p.product_code||'', p.barcode||'', p.supplier_code||'', p.supplier_name||'', p.stock_location||'', p.stock_ku!=null?p.stock_ku:'', p.stock_banchi!=null?p.stock_banchi:'', p.is_active?'有効':'無効']);
+  // 全セルを文字列型で出力（先頭0を保持するため）
+  var headerRow = ['カテゴリ','統一コード','ギフトコード','商品名','商品記号','バーコード','仕入先コード','仕入先名','ストック場所','区','番地','状態'].map(function(h){ return strCell(h); });
+  var dataRows = prods.map(function(p) {
+    return [
+      strCell(p.category||''),
+      strCell(p.unified_code||''),
+      strCell(p.gift_code||''),
+      strCell(p.product_name||''),
+      strCell(p.product_code||''),
+      strCell(p.barcode||''),
+      strCell(p.supplier_code||''),
+      strCell(p.supplier_name||''),
+      strCell(p.stock_location||''),
+      strCell(p.stock_ku!=null ? String(p.stock_ku) : ''),
+      strCell(p.stock_banchi!=null ? String(p.stock_banchi) : ''),
+      strCell(p.is_active ? '有効' : '無効')
+    ];
   });
   var wb = XLSX.utils.book_new();
-  var ws = XLSX.utils.aoa_to_sheet(rows);
+  var ws = XLSX.utils.aoa_to_sheet([headerRow].concat(dataRows));
   XLSX.utils.book_append_sheet(wb, ws, '商品マスタ');
   XLSX.writeFile(wb, '商品マスタ_' + todayStr() + '.xlsx');
 }
@@ -962,12 +981,20 @@ function handleImportFile(input) {
   reader.onload = function(e) {
     var wb = XLSX.read(e.target.result, {type:'binary'});
     var ws = wb.Sheets[wb.SheetNames[0]];
-    var data = XLSX.utils.sheet_to_json(ws, {defval:''});
+    // raw:false で全セルを文字列として読み込む（先頭0を保持するため）
+    var data = XLSX.utils.sheet_to_json(ws, {defval:'', raw:false});
+    // さらに各フィールドを明示的に文字列変換（数値変換されてしまう場合の保険）
+    data = data.map(function(r) {
+      var row = {};
+      Object.keys(r).forEach(function(k) { row[k] = r[k] != null ? String(r[k]) : ''; });
+      return row;
+    });
     importRows = data;
     var preview = document.getElementById('importPreview');
+    var col = function(r, ja, en) { return r[ja] || r[en] || ''; };
     preview.innerHTML = '<p class="text-sm text-gray-700 mb-2">' + data.length + '件を読み込みました。</p>'
-      + '<div class="overflow-x-auto max-h-48 border rounded"><table class="text-xs w-full"><thead class="tbl-header"><tr><th>カテゴリ</th><th>統一コード</th><th>ギフトコード</th><th>商品名</th><th>バーコード</th></tr></thead><tbody>'
-      + data.slice(0,10).map(function(r){ return '<tr><td>'+(r.category||'')+'</td><td>'+(r.unified_code||'')+'</td><td>'+(r.gift_code||'')+'</td><td>'+(r.product_name||'')+'</td><td>'+(r.barcode||'')+'</td></tr>'; }).join('')
+      + '<div class="overflow-x-auto max-h-48 border rounded"><table class="text-xs w-full"><thead class="tbl-header"><tr><th>カテゴリ</th><th>統一コード</th><th>ギフトコード</th><th>商品名</th><th>商品記号</th><th>バーコード</th></tr></thead><tbody>'
+      + data.slice(0,10).map(function(r){ return '<tr><td>'+col(r,'カテゴリ','category')+'</td><td>'+col(r,'統一コード','unified_code')+'</td><td>'+col(r,'ギフトコード','gift_code')+'</td><td>'+col(r,'商品名','product_name')+'</td><td>'+col(r,'商品記号','product_code')+'</td><td>'+col(r,'バーコード','barcode')+'</td></tr>'; }).join('')
       + '</tbody></table></div>';
     document.getElementById('importBtn').classList.remove('hidden');
   };
