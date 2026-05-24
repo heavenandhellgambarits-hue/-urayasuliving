@@ -316,9 +316,17 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
         </div>
       </div>
       <div class="card overflow-hidden">
+        <div id="historyBulkBar" class="hidden px-4 py-2 bg-red-50 border-b border-red-100 flex items-center gap-3">
+          <span id="historySelCount" class="text-sm font-bold text-red-700"></span>
+          <button onclick="bulkDeleteHistory()" class="btn-sm btn-sm-red"><i class="fas fa-trash mr-1"></i>選択を一括削除</button>
+          <button onclick="clearHistorySelection()" class="btn-sm btn-sm-gray"><i class="fas fa-times mr-1"></i>選択解除</button>
+        </div>
         <div class="overflow-x-auto">
           <table class="w-full text-xs">
-            <thead class="tbl-header"><tr><th>発注番号</th><th>店舗/部署</th><th>担当者</th><th>納品希望日</th><th>商品数</th><th>ステータス</th><th>発注日時</th></tr></thead>
+            <thead class="tbl-header"><tr>
+              <th class="w-8"><input type="checkbox" id="historySelAll" onchange="toggleAllHistory(this.checked)" class="cursor-pointer"></th>
+              <th>発注番号</th><th>店舗/部署</th><th>担当者</th><th>納品希望日</th><th>ステータス</th><th>発注日時</th><th>操作</th>
+            </tr></thead>
             <tbody id="historyTbody"></tbody>
           </table>
         </div>
@@ -1099,17 +1107,71 @@ async function loadHistory() {
 
   // 各発注の明細件数は orders に含まれていないので別途表示
   var tbody = document.getElementById('historyTbody');
-  if (!historyData.length) { tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-500">データがありません</td></tr>'; return; }
+  if (!historyData.length) { tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-gray-500">データがありません</td></tr>'; return; }
   tbody.innerHTML = historyData.map(function(o) {
-    return '<tr>'
+    return '<tr class="history-row" data-id="' + o.id + '">'
+      + '<td class="text-center"><input type="checkbox" class="history-chk cursor-pointer" data-id="' + o.id + '" onchange="onHistoryChkChange()"></td>'
       + '<td class="font-bold p-accent">' + o.order_no + '</td>'
       + '<td>' + o.store_name + (o.section_name ? ' / ' + o.section_name : '') + '</td>'
       + '<td>' + (o.orderer_name||'-') + '</td>'
       + '<td>' + (o.desired_delivery_date||'-') + '</td>'
-      + '<td>-</td>'
       + '<td><span class="sbadge ' + (statusCls[o.status]||'') + '">' + (statusLabel[o.status]||o.status) + '</span></td>'
-      + '<td>' + fmtJST(o.created_at) + '</td></tr>';
+      + '<td>' + fmtJST(o.created_at) + '</td>'
+      + '<td><button onclick="deleteHistoryOrder(' + o.id + ',\\'' + o.order_no + '\\')" class="btn-sm btn-sm-red"><i class="fas fa-trash"></i></button></td>'
+      + '</tr>';
   }).join('');
+  // 全選チェックをリセット
+  var selAll = document.getElementById('historySelAll');
+  if (selAll) selAll.checked = false;
+  document.getElementById('historyBulkBar').classList.add('hidden');
+}
+
+// 単件削除
+async function deleteHistoryOrder(id, orderNo) {
+  if (!confirm('発注番号 ' + orderNo + ' を削除しますか？\\nこの操作は元に戻せません。')) return;
+  var res = await apiFetch('/api/admin/orders/' + id, {method:'DELETE'});
+  if (res.ok) { showToast('削除しました'); loadHistory(); }
+  else showToast('削除に失敗しました', 'error');
+}
+
+// チェックボックス変化 → バー表示切替
+function onHistoryChkChange() {
+  var chks = document.querySelectorAll('.history-chk:checked');
+  var bar = document.getElementById('historyBulkBar');
+  var cnt = document.getElementById('historySelCount');
+  var selAll = document.getElementById('historySelAll');
+  var allChks = document.querySelectorAll('.history-chk');
+  cnt.textContent = chks.length + '件を選択中';
+  bar.classList.toggle('hidden', chks.length === 0);
+  if (selAll) selAll.checked = allChks.length > 0 && chks.length === allChks.length;
+}
+
+// 全選 / 全解除
+function toggleAllHistory(checked) {
+  document.querySelectorAll('.history-chk').forEach(function(el) { el.checked = checked; });
+  onHistoryChkChange();
+}
+
+// 選択解除
+function clearHistorySelection() {
+  document.querySelectorAll('.history-chk').forEach(function(el) { el.checked = false; });
+  var selAll = document.getElementById('historySelAll');
+  if (selAll) selAll.checked = false;
+  onHistoryChkChange();
+}
+
+// 一括削除
+async function bulkDeleteHistory() {
+  var chks = document.querySelectorAll('.history-chk:checked');
+  if (!chks.length) return;
+  var ids = Array.from(chks).map(function(el) { return parseInt(el.getAttribute('data-id'), 10); });
+  if (!confirm(ids.length + '件の受注履歴を削除しますか？\\nこの操作は元に戻せません。')) return;
+  var res = await apiFetch('/api/admin/orders/bulk-delete', {method:'POST', body:JSON.stringify({ids:ids})});
+  if (res.ok) {
+    var d = await res.json();
+    showToast(d.deleted + '件を削除しました');
+    loadHistory();
+  } else showToast('削除に失敗しました', 'error');
 }
 
 async function exportHistory(fmt) {

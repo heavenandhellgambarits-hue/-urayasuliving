@@ -126,6 +126,34 @@ admin.put('/orders/:id/cancel-complete', async (c) => {
   return c.json({ success: true });
 });
 
+// 受注履歴 単件削除
+admin.delete('/orders/:id', async (c) => {
+  const id = c.req.param('id');
+  // 関連レコードを先に削除してからordersを削除
+  await c.env.DB.prepare('DELETE FROM inspection_logs WHERE order_id=?').bind(id).run();
+  await c.env.DB.prepare('DELETE FROM order_items WHERE order_id=?').bind(id).run();
+  await c.env.DB.prepare('DELETE FROM order_progress WHERE order_id=?').bind(id).run();
+  await c.env.DB.prepare('DELETE FROM notices WHERE order_id=?').bind(id).run();
+  await c.env.DB.prepare('DELETE FROM orders WHERE id=?').bind(id).run();
+  return c.json({ success: true });
+});
+
+// 受注履歴 一括削除
+admin.post('/orders/bulk-delete', async (c) => {
+  const { ids } = await c.req.json();
+  if (!Array.isArray(ids) || ids.length === 0) return c.json({ error: '削除対象がありません' }, 400);
+  // idは整数のみ許容（SQLインジェクション対策）
+  const safeIds = ids.map((v: any) => parseInt(v, 10)).filter((v) => !isNaN(v));
+  if (safeIds.length === 0) return c.json({ error: '有効なIDがありません' }, 400);
+  const placeholders = safeIds.map(() => '?').join(',');
+  await c.env.DB.prepare(`DELETE FROM inspection_logs WHERE order_id IN (${placeholders})`).bind(...safeIds).run();
+  await c.env.DB.prepare(`DELETE FROM order_items WHERE order_id IN (${placeholders})`).bind(...safeIds).run();
+  await c.env.DB.prepare(`DELETE FROM order_progress WHERE order_id IN (${placeholders})`).bind(...safeIds).run();
+  await c.env.DB.prepare(`DELETE FROM notices WHERE order_id IN (${placeholders})`).bind(...safeIds).run();
+  await c.env.DB.prepare(`DELETE FROM orders WHERE id IN (${placeholders})`).bind(...safeIds).run();
+  return c.json({ deleted: safeIds.length });
+});
+
 // ========== 商品マスタ ==========
 
 admin.get('/products', async (c) => {
