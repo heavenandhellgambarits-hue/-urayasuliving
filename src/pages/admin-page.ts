@@ -271,10 +271,31 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
         </div>
       </div>
       <div class="card overflow-hidden">
+        <!-- 一括削除バー -->
+        <div id="productBulkBar" class="hidden px-4 py-2 bg-red-50 border-b border-red-100 flex items-center gap-3">
+          <span id="productSelCount" class="text-sm font-bold text-red-700"></span>
+          <button onclick="bulkDeleteProducts()" class="btn-sm btn-sm-red"><i class="fas fa-trash mr-1"></i>選択を一括削除</button>
+          <button onclick="clearProductSelection()" class="btn-sm btn-sm-gray"><i class="fas fa-times mr-1"></i>選択解除</button>
+        </div>
         <div class="overflow-x-auto">
           <table class="w-full text-xs">
             <thead class="tbl-header">
-              <tr><th>カテゴリ</th><th>統一コード</th><th>ギフトコード</th><th>商品名</th><th>商品記号バーコード</th><th>仕入先コード</th><th>仕入先名</th><th>ストック場所</th><th>区</th><th>番地</th><th>状態</th><th>操作</th></tr>
+              <tr>
+                <th class="w-8 text-center"><input type="checkbox" id="productSelAll" onchange="toggleAllProducts(this.checked)" class="cursor-pointer"></th>
+                <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('category')">カテゴリ<span class="sort-icon" id="psh-category"></span></th>
+                <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('unified_code')">統一コード<span class="sort-icon" id="psh-unified_code"></span></th>
+                <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('gift_code')">ギフトコード<span class="sort-icon" id="psh-gift_code"></span></th>
+                <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('product_name')">商品名<span class="sort-icon" id="psh-product_name"></span></th>
+                <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('product_code')">商品記号<span class="sort-icon" id="psh-product_code"></span></th>
+                <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('barcode')">バーコード<span class="sort-icon" id="psh-barcode"></span></th>
+                <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('supplier_code')">仕入先コード<span class="sort-icon" id="psh-supplier_code"></span></th>
+                <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('supplier_name')">仕入先名<span class="sort-icon" id="psh-supplier_name"></span></th>
+                <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('stock_location')">ストック場所<span class="sort-icon" id="psh-stock_location"></span></th>
+                <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('stock_ku')">区<span class="sort-icon" id="psh-stock_ku"></span></th>
+                <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('stock_banchi')">番地<span class="sort-icon" id="psh-stock_banchi"></span></th>
+                <th class="cursor-pointer select-none whitespace-nowrap" onclick="sortProductsBy('is_active')">状態<span class="sort-icon" id="psh-is_active"></span></th>
+                <th>操作</th>
+              </tr>
             </thead>
             <tbody id="productsTbody"></tbody>
           </table>
@@ -852,19 +873,39 @@ async function printDeliverySlip(id) {
 function goInspection(id) { closeModal('orderModal'); window.location.href = '/admin/inspection/' + id; }
 
 // ========== 商品マスタ ==========
+var _productData = [];          // 全件キャッシュ
+var _productSortKey = '';       // 現在のソートキー
+var _productSortAsc = true;     // 昇順フラグ
+
 async function loadProducts() {
   var search = document.getElementById('productSearchAdmin')?.value||'';
   var url = '/api/admin/products' + (search ? '?search=' + encodeURIComponent(search) : '');
   var data = await (await apiFetch(url)).json();
-  var prods = data.products || [];
+  _productData = data.products || [];
+  // ソートが指定されていれば維持
+  if (_productSortKey) _applyProductSort();
+  else _renderProducts(_productData);
+}
+
+function _renderProducts(prods) {
   var tbody = document.getElementById('productsTbody');
-  if (prods.length === 0) { tbody.innerHTML = '<tr><td colspan="12" class="text-center py-8 text-gray-500">商品がありません</td></tr>'; return; }
+  if (!tbody) return;
+  if (prods.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="14" class="text-center py-8 text-gray-500">商品がありません</td></tr>';
+    // 全選チェックとバーをリセット
+    var selAll = document.getElementById('productSelAll');
+    if (selAll) selAll.checked = false;
+    document.getElementById('productBulkBar').classList.add('hidden');
+    return;
+  }
   tbody.innerHTML = prods.map(function(p) {
-    return '<tr>'
+    return '<tr class="product-row" data-id="' + p.id + '">'
+      + '<td class="text-center"><input type="checkbox" class="product-chk cursor-pointer" data-id="' + p.id + '" onchange="onProductChkChange()"></td>'
       + '<td><span class="sbadge s-completed">' + (p.category||'-') + '</span></td>'
       + '<td class="font-mono">' + (p.unified_code||'-') + '</td>'
       + '<td class="font-mono font-bold p-accent">' + (p.gift_code||'-') + '</td>'
       + '<td class="font-medium">' + (p.is_new ? '<span class="new-badge">NEW</span> ' : '') + p.product_name + '</td>'
+      + '<td class="font-mono text-gray-600">' + (p.product_code||'-') + '</td>'
       + '<td class="font-mono text-gray-600">' + (p.barcode||'-') + '</td>'
       + '<td class="font-mono text-gray-600">' + (p.supplier_code||'-') + '</td>'
       + '<td>' + (p.supplier_name||'-') + '</td>'
@@ -877,6 +918,99 @@ async function loadProducts() {
       + '<button onclick="deleteProduct(' + p.id + ')" class="btn-d"><i class="fas fa-trash"></i></button>'
       + '</td></tr>';
   }).join('');
+  // 全選チェックとバーをリセット
+  var selAll = document.getElementById('productSelAll');
+  if (selAll) selAll.checked = false;
+  document.getElementById('productBulkBar').classList.add('hidden');
+}
+
+// ソート適用
+function _applyProductSort() {
+  var key = _productSortKey;
+  var asc = _productSortAsc;
+  var sorted = _productData.slice().sort(function(a, b) {
+    var va = a[key]; var vb = b[key];
+    // null/undefined は末尾へ
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    // 数値比較
+    if (typeof va === 'number' && typeof vb === 'number') return asc ? va - vb : vb - va;
+    // 文字列比較
+    var sa = String(va).toLowerCase(); var sb = String(vb).toLowerCase();
+    if (sa < sb) return asc ? -1 : 1;
+    if (sa > sb) return asc ? 1 : -1;
+    return 0;
+  });
+  _renderProducts(sorted);
+}
+
+// ヘッダークリックでソート
+function sortProductsBy(key) {
+  if (_productSortKey === key) {
+    _productSortAsc = !_productSortAsc;
+  } else {
+    _productSortKey = key;
+    _productSortAsc = true;
+  }
+  // ソートアイコン更新
+  var cols = ['category','unified_code','gift_code','product_name','product_code','barcode','supplier_code','supplier_name','stock_location','stock_ku','stock_banchi','is_active'];
+  cols.forEach(function(c) {
+    var el = document.getElementById('psh-' + c);
+    if (!el) return;
+    if (c === _productSortKey) {
+      el.textContent = _productSortAsc ? ' ▲' : ' ▼';
+      el.style.opacity = '1';
+    } else {
+      el.textContent = ' ⇅';
+      el.style.opacity = '0.4';
+    }
+  });
+  _applyProductSort();
+}
+
+// チェックボックス変化 → バー表示切替
+function onProductChkChange() {
+  var chks = document.querySelectorAll('.product-chk:checked');
+  var allChks = document.querySelectorAll('.product-chk');
+  var bar = document.getElementById('productBulkBar');
+  var cnt = document.getElementById('productSelCount');
+  var selAll = document.getElementById('productSelAll');
+  cnt.textContent = chks.length + '件を選択中';
+  bar.classList.toggle('hidden', chks.length === 0);
+  if (selAll) selAll.checked = allChks.length > 0 && chks.length === allChks.length;
+}
+
+// 全選 / 全解除
+function toggleAllProducts(checked) {
+  document.querySelectorAll('.product-chk').forEach(function(el) { el.checked = checked; });
+  onProductChkChange();
+}
+
+// 選択解除
+function clearProductSelection() {
+  document.querySelectorAll('.product-chk').forEach(function(el) { el.checked = false; });
+  var selAll = document.getElementById('productSelAll');
+  if (selAll) selAll.checked = false;
+  onProductChkChange();
+}
+
+// 一括削除
+async function bulkDeleteProducts() {
+  var chks = document.querySelectorAll('.product-chk:checked');
+  if (!chks.length) return;
+  var ids = Array.from(chks).map(function(el) { return parseInt(el.getAttribute('data-id'), 10); });
+  if (!confirm(ids.length + '件の商品をマスタから完全に削除しますか？\\nこの操作は元に戻せません。')) return;
+  var res = await apiFetch('/api/admin/products/bulk-delete', {method:'POST', body:JSON.stringify({ids:ids})});
+  if (res.ok) {
+    var d = await res.json();
+    showToast(d.deleted + '件を削除しました');
+    _productSortKey = '';
+    _productSortAsc = true;
+    loadProducts();
+  } else {
+    showToast('削除に失敗しました', 'error');
+  }
 }
 
 async function openProductModal(id) {

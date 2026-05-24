@@ -215,6 +215,17 @@ admin.delete('/products/:id', async (c) => {
   return c.json({ success: true });
 });
 
+// 商品一括削除
+admin.post('/products/bulk-delete', async (c) => {
+  const { ids } = await c.req.json();
+  if (!Array.isArray(ids) || ids.length === 0) return c.json({ error: '削除対象がありません' }, 400);
+  const safeIds = ids.map((v: any) => parseInt(v, 10)).filter((v) => !isNaN(v));
+  if (safeIds.length === 0) return c.json({ error: '有効なIDがありません' }, 400);
+  const placeholders = safeIds.map(() => '?').join(',');
+  await c.env.DB.prepare(`DELETE FROM products WHERE id IN (${placeholders})`).bind(...safeIds).run();
+  return c.json({ deleted: safeIds.length });
+});
+
 // Excel取込（JSON行データで受信）
 admin.post('/products/import', async (c) => {
   const { rows } = await c.req.json();
