@@ -1,24 +1,36 @@
 import { Hono } from 'hono';
 import { storeAuthMiddleware } from '../middleware';
 import { Bindings, Variables, nowJST, ymdJST } from '../types';
+import { getSupabase } from '../lib/db';
 
 const store = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 store.use('*', storeAuthMiddleware);
 
 // 商品一覧
 store.get('/products', async (c) => {
-  const { results } = await c.env.DB.prepare(
-    'SELECT * FROM products WHERE is_active=1 ORDER BY category, product_name'
-  ).all();
-  return c.json({ products: results });
+  const sb = getSupabase(c.env);
+  const { data, error } = await sb
+    .from('products')
+    .select('*')
+    .eq('is_active', 1)
+    .order('category')
+    .order('product_name');
+  if (error) return c.json({ error: error.message }, 500);
+  return c.json({ products: data });
 });
 
 // お知らせ
 store.get('/notices', async (c) => {
-  const { results } = await c.env.DB.prepare(
-    `SELECT * FROM notices WHERE (expire_at IS NULL OR datetime(expire_at) > datetime('now')) ORDER BY created_at DESC LIMIT 20`
-  ).all();
-  return c.json({ notices: results });
+  const sb = getSupabase(c.env);
+  const now = nowJST();
+  const { data, error } = await sb
+    .from('notices')
+    .select('*')
+    .or(`expire_at.is.null,expire_at.gt.${now}`)
+    .order('created_at', { ascending: false })
+    .limit(20);
+  if (error) return c.json({ error: error.message }, 500);
+  return c.json({ notices: data });
 });
 
 // 発注一覧
@@ -26,29 +38,50 @@ store.get('/orders', async (c) => {
   const storeId = c.get('storeId');
   const from = c.req.query('from');
   const to   = c.req.query('to');
-  let sql = `SELECT o.*, op.is_completed, op.worker_name, op.printed_at
-             FROM orders o LEFT JOIN order_progress op ON o.id=op.order_id
-             WHERE o.store_id=?`;
-  const params: any[] = [storeId];
-  if (from) { sql += " AND date(datetime(o.created_at,'+9 hours')) >= ?"; params.push(from); }
-  if (to)   { sql += " AND date(datetime(o.created_at,'+9 hours')) <= ?"; params.push(to); }
-  sql += ' ORDER BY o.created_at DESC';
-  const { results } = await c.env.DB.prepare(sql).bind(...params).all();
-  return c.json({ orders: results });
+  const sb = getSupabase(c.env);
+
+  let query = sb
+    .from('orders')
+    .select('*, order_progress(is_completed, worker_name, printed_at)')
+    .eq('store_id', storeId!)
+    .order('created_at', { ascending: false });
+
+  if (from) query = query.gte('created_at', `${from}T00:00:00`);
+  if (to)   query = query.lte('created_at', `${to}T23:59:59`);
+
+  const { data, error } = await query;
+  if (error) return c.json({ error: error.message }, 500);
+
+  // order_progress をフラットに展開
+  const orders = (data || []).map((o: any) => {
+    const op = Array.isArray(o.order_progress) ? o.order_progress[0] : o.order_progress;
+    return { ...o, order_progress: undefined, ...op };
+  });
+  return c.json({ orders });
 });
 
 // 発注詳細
 store.get('/orders/:id', async (c) => {
   const storeId = c.get('storeId');
-  const id = c.req.param('id');
-  const order = await c.env.DB.prepare(
-    `SELECT o.*, op.is_completed, op.worker_name, op.printed_at, op.completed_at
-     FROM orders o LEFT JOIN order_progress op ON o.id=op.order_id
-     WHERE o.id=? AND o.store_id=?`
-  ).bind(id, storeId).first<any>();
-  if (!order) return c.json({ error: '発注が見つかりません' }, 404);
-  const { results: items } = await c.env.DB.prepare('SELECT * FROM order_items WHERE order_id=?').bind(id).all();
-  return c.json({ order, items });
+  const id = Number(c.req.param('id'));
+  const sb = getSupabase(c.env);
+
+  const { data: order, error } = await sb
+    .from('orders')
+    .select('*, order_progress(is_completed, worker_name, printed_at, completed_at)')
+    .eq('id', id)
+    .eq('store_id', storeId!)
+    .single();
+
+  if (error || !order) return c.json({ error: '発注が見つかりません' }, 404);
+
+  const { data: items } = await sb
+    .from('order_items')
+    .select('*')
+    .eq('order_id', id);
+
+  const op = Array.isArray(order.order_progress) ? order.order_progress[0] : order.order_progress;
+  return c.json({ order: { ...order, order_progress: undefined, ...op }, items: items || [] });
 });
 
 // 発注作成（発注番号: YYYYMMDD + 3桁連番）
@@ -61,61 +94,102 @@ store.post('/orders', async (c) => {
   if (!items || !Array.isArray(items) || items.length === 0)
     return c.json({ error: '発注商品を選択してください' }, 400);
 
+  const sb = getSupabase(c.env);
   const ymd = ymdJST();
   const jst = nowJST();
 
-  // 連番取得・更新（アトミック）
-  const seq = await c.env.DB.prepare(
-    'INSERT INTO order_sequences (ymd, last_seq) VALUES (?,1) ON CONFLICT(ymd) DO UPDATE SET last_seq=last_seq+1 RETURNING last_seq'
-  ).bind(ymd).first<any>();
-  const seqNum = String(seq?.last_seq || 1).padStart(3, '0');
+  // 連番取得（order_sequencesをupsert）
+  const { data: seqData } = await sb
+    .from('order_sequences')
+    .select('last_seq')
+    .eq('ymd', ymd)
+    .single();
+
+  const newSeq = (seqData?.last_seq || 0) + 1;
+  await sb.from('order_sequences').upsert({ ymd, last_seq: newSeq });
+
+  const seqNum = String(newSeq).padStart(3, '0');
   const order_no = `${ymd}${seqNum}`;
 
-  const orderResult = await c.env.DB.prepare(
-    `INSERT INTO orders (order_no,store_id,store_name,section_name,orderer_name,desired_delivery_date,status,note,created_at,updated_at)
-     VALUES (?,?,?,?,?,?,'pending',?,?,?)`
-  ).bind(order_no, storeId, storeName, section_name||'', orderer_name||'', desired_delivery_date||'', note||'', jst, jst).run();
+  // 発注登録
+  const { data: orderData, error: orderError } = await sb
+    .from('orders')
+    .insert({
+      order_no,
+      store_id: storeId,
+      store_name: storeName,
+      section_name: section_name || '',
+      orderer_name: orderer_name || '',
+      desired_delivery_date: desired_delivery_date || '',
+      status: 'pending',
+      note: note || '',
+      created_at: jst,
+      updated_at: jst,
+    })
+    .select('id')
+    .single();
 
-  const orderId = orderResult.meta.last_row_id;
+  if (orderError || !orderData) return c.json({ error: orderError?.message || '発注登録失敗' }, 500);
+  const orderId = orderData.id;
 
+  // 明細登録
   for (const item of items) {
-    const product = await c.env.DB.prepare('SELECT * FROM products WHERE id=?').bind(item.product_id).first<any>();
+    const { data: product } = await sb
+      .from('products')
+      .select('*')
+      .eq('id', item.product_id)
+      .single();
+
     if (product) {
-      await c.env.DB.prepare(
-        `INSERT INTO order_items
-          (order_id,product_id,product_name,product_code,barcode,quantity,category,
-           gift_code,unified_code,supplier_code,supplier_name,stock_location,stock_ku,stock_banchi)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
-      ).bind(
-        orderId, product.id, product.product_name, product.product_code||'', product.barcode||'',
-        item.quantity, product.category||'',
-        product.gift_code||'', product.unified_code||'', product.supplier_code||'', product.supplier_name||'',
-        product.stock_location||'', product.stock_ku||null, product.stock_banchi||null
-      ).run();
+      await sb.from('order_items').insert({
+        order_id: orderId,
+        product_id: product.id,
+        product_name: product.product_name,
+        product_code: product.product_code || '',
+        barcode: product.barcode || '',
+        quantity: item.quantity,
+        category: product.category || '',
+        gift_code: product.gift_code || '',
+        unified_code: product.unified_code || '',
+        supplier_code: product.supplier_code || '',
+        supplier_name: product.supplier_name || '',
+        stock_location: product.stock_location || '',
+        stock_ku: product.stock_ku || null,
+        stock_banchi: product.stock_banchi || null,
+      });
     }
   }
 
-  await c.env.DB.prepare('INSERT INTO order_progress (order_id) VALUES (?)').bind(orderId).run();
+  await sb.from('order_progress').insert({ order_id: orderId });
   return c.json({ order_no, order_id: orderId, id: orderId }, 201);
 });
 
 // キャンセル依頼
 store.post('/orders/:id/cancel-request', async (c) => {
   const storeId = c.get('storeId');
-  const id = c.req.param('id');
+  const id = Number(c.req.param('id'));
   const { reason } = await c.req.json();
   const jst = nowJST();
+  const sb = getSupabase(c.env);
 
-  const order = await c.env.DB.prepare(
-    'SELECT * FROM orders WHERE id=? AND store_id=?'
-  ).bind(id, storeId).first<any>();
+  const { data: order } = await sb
+    .from('orders')
+    .select('*')
+    .eq('id', id)
+    .eq('store_id', storeId!)
+    .single();
+
   if (!order) return c.json({ error: '発注が見つかりません' }, 404);
   if (order.status === 'completed' || order.status === 'cancelled')
     return c.json({ error: 'この発注はキャンセル依頼できません' }, 400);
 
-  await c.env.DB.prepare(
-    `UPDATE orders SET status='cancel_request', cancel_requested=1, cancel_reason=?, cancel_requested_at=?, updated_at=? WHERE id=?`
-  ).bind(reason||'', jst, jst, id).run();
+  await sb.from('orders').update({
+    status: 'cancel_request',
+    cancel_requested: 1,
+    cancel_reason: reason || '',
+    cancel_requested_at: jst,
+    updated_at: jst,
+  }).eq('id', id);
 
   return c.json({ success: true });
 });
@@ -123,8 +197,13 @@ store.post('/orders/:id/cancel-request', async (c) => {
 // ログイン情報
 store.get('/me', async (c) => {
   const storeId = c.get('storeId');
-  const s = await c.env.DB.prepare('SELECT id,store_name,section_name,phone,login_id FROM stores WHERE id=?').bind(storeId).first();
-  return c.json({ store: s });
+  const sb = getSupabase(c.env);
+  const { data } = await sb
+    .from('stores')
+    .select('id, store_name, section_name, phone, login_id')
+    .eq('id', storeId!)
+    .single();
+  return c.json({ store: data });
 });
 
 export default store;

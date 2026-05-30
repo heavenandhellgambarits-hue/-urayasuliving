@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { signJwt, verifyPassword, getJwtSecret } from '../auth';
 import { Bindings, Variables } from '../types';
+import { getSupabase } from '../lib/db';
 
 const auth = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -11,11 +12,14 @@ auth.post('/store/login', async (c) => {
     return c.json({ error: 'ログインIDとパスワードを入力してください' }, 400);
   }
 
-  const store = await c.env.DB.prepare(
-    'SELECT * FROM stores WHERE login_id = ?'
-  ).bind(login_id).first<any>();
+  const sb = getSupabase(c.env);
+  const { data: store, error } = await sb
+    .from('stores')
+    .select('*')
+    .eq('login_id', login_id)
+    .single();
 
-  if (!store) {
+  if (error || !store) {
     return c.json({ error: 'ログインIDまたはパスワードが正しくありません' }, 401);
   }
 
@@ -47,11 +51,14 @@ auth.post('/admin/login', async (c) => {
     return c.json({ error: 'ユーザー名とパスワードを入力してください' }, 400);
   }
 
-  const admin = await c.env.DB.prepare(
-    'SELECT * FROM admins WHERE username = ?'
-  ).bind(username).first<any>();
+  const sb = getSupabase(c.env);
+  const { data: admin, error } = await sb
+    .from('admins')
+    .select('*')
+    .eq('username', username)
+    .single();
 
-  if (!admin) {
+  if (error || !admin) {
     return c.json({ error: 'ユーザー名またはパスワードが正しくありません' }, 401);
   }
 

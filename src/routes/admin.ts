@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
 import { adminAuthMiddleware } from '../middleware';
-import { Bindings, Variables, ORDER_STATUS_LABEL, nowJST, ymdJST } from '../types';
+import { Bindings, Variables, nowJST, ymdJST } from '../types';
 import { hashPassword } from '../auth';
+import { getSupabase } from '../lib/db';
 
 const admin = new Hono<{ Bindings: Bindings; Variables: Variables }>();
-
 admin.use('*', adminAuthMiddleware);
 
 // ========== 発注管理 ==========
@@ -14,79 +14,89 @@ admin.get('/orders', async (c) => {
   const search = c.req.query('search');
   const from   = c.req.query('from');
   const to     = c.req.query('to');
+  const sb = getSupabase(c.env);
 
-  let sql = `SELECT o.*, op.is_completed, op.worker_name, op.printed_at, op.completed_at, op.alert_sent
-             FROM orders o
-             LEFT JOIN order_progress op ON o.id = op.order_id`;
-  const params: any[] = [];
-  const conditions: string[] = [];
+  let query = sb
+    .from('orders')
+    .select('*, order_progress(is_completed, worker_name, printed_at, completed_at, alert_sent)')
+    .order('created_at', { ascending: false })
+    .limit(500);
 
-  if (status) { conditions.push('o.status = ?'); params.push(status); }
+  if (status) query = query.eq('status', status);
+  if (from)   query = query.gte('created_at', `${from}T00:00:00`);
+  if (to)     query = query.lte('created_at', `${to}T23:59:59`);
   if (search) {
-    conditions.push('(o.order_no LIKE ? OR o.store_name LIKE ? OR o.orderer_name LIKE ?)');
-    params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+    query = query.or(
+      `order_no.ilike.%${search}%,store_name.ilike.%${search}%,orderer_name.ilike.%${search}%`
+    );
   }
-  if (from) { conditions.push("date(datetime(o.created_at, '+9 hours')) >= ?"); params.push(from); }
-  if (to)   { conditions.push("date(datetime(o.created_at, '+9 hours')) <= ?"); params.push(to); }
 
-  if (conditions.length > 0) sql += ' WHERE ' + conditions.join(' AND ');
-  sql += ' ORDER BY o.created_at DESC LIMIT 500';
+  const { data, error } = await query;
+  if (error) return c.json({ error: error.message }, 500);
 
-  const { results } = await c.env.DB.prepare(sql).bind(...params).all();
-  return c.json({ orders: results });
+  const orders = (data || []).map((o: any) => {
+    const op = Array.isArray(o.order_progress) ? o.order_progress[0] : o.order_progress;
+    return { ...o, order_progress: undefined, ...op };
+  });
+  return c.json({ orders });
 });
 
 admin.get('/orders/:id', async (c) => {
-  const id = c.req.param('id');
-  const order = await c.env.DB.prepare(
-    `SELECT o.*, op.is_completed, op.worker_name, op.printed_at, op.completed_at, op.alert_sent
-     FROM orders o
-     LEFT JOIN order_progress op ON o.id = op.order_id
-     WHERE o.id = ?`
-  ).bind(id).first<any>();
+  const id = Number(c.req.param('id'));
+  const sb = getSupabase(c.env);
 
-  if (!order) return c.json({ error: '発注が見つかりません' }, 404);
+  const { data: order, error } = await sb
+    .from('orders')
+    .select('*, order_progress(is_completed, worker_name, printed_at, completed_at, alert_sent)')
+    .eq('id', id)
+    .single();
 
-  const { results: items } = await c.env.DB.prepare(
-    'SELECT * FROM order_items WHERE order_id = ?'
-  ).bind(id).all();
+  if (error || !order) return c.json({ error: '発注が見つかりません' }, 404);
 
-  const { results: inspections } = await c.env.DB.prepare(
-    'SELECT * FROM inspection_logs WHERE order_id = ? ORDER BY scanned_at'
-  ).bind(id).all();
+  const { data: items } = await sb.from('order_items').select('*').eq('order_id', id);
+  const { data: inspections } = await sb
+    .from('inspection_logs')
+    .select('*')
+    .eq('order_id', id)
+    .order('scanned_at');
 
-  return c.json({ order, items, inspections });
+  const op = Array.isArray(order.order_progress) ? order.order_progress[0] : order.order_progress;
+  return c.json({
+    order: { ...order, order_progress: undefined, ...op },
+    items: items || [],
+    inspections: inspections || [],
+  });
 });
 
 // ステータス手動更新
 admin.put('/orders/:id/status', async (c) => {
-  const id = c.req.param('id');
+  const id = Number(c.req.param('id'));
   const { status, worker_name } = await c.req.json();
   const jst = nowJST();
+  const sb = getSupabase(c.env);
 
-  await c.env.DB.prepare(
-    `UPDATE orders SET status = ?, updated_at = ? WHERE id = ?`
-  ).bind(status, jst, id).run();
+  await sb.from('orders').update({ status, updated_at: jst }).eq('id', id);
 
   if (status === 'completed') {
-    await c.env.DB.prepare(
-      `UPDATE order_progress SET is_completed=1, completed_at=?, worker_name=?, updated_at=? WHERE order_id=?`
-    ).bind(jst, worker_name || '', jst, id).run();
+    await sb.from('order_progress').update({
+      is_completed: 1, completed_at: jst, worker_name: worker_name || '', updated_at: jst,
+    }).eq('order_id', id);
   } else {
-    await c.env.DB.prepare(
-      `UPDATE order_progress SET worker_name=?, updated_at=? WHERE order_id=?`
-    ).bind(worker_name || '', jst, id).run();
+    await sb.from('order_progress').update({
+      worker_name: worker_name || '', updated_at: jst,
+    }).eq('order_id', id);
   }
 
   // キャンセル済 → お知らせ自動作成
   if (status === 'cancelled') {
-    const order = await c.env.DB.prepare('SELECT * FROM orders WHERE id = ?').bind(id).first<any>();
+    const { data: order } = await sb.from('orders').select('*').eq('id', id).single();
     if (order) {
       const title = `【キャンセル完了】発注番号 ${order.order_no}`;
       const body  = `発注番号: ${order.order_no}\n発注元: ${order.store_name}${order.section_name ? ' / ' + order.section_name : ''}\n担当者: ${order.orderer_name || '-'}\nキャンセルが完了しました。`;
-      await c.env.DB.prepare(
-        `INSERT INTO notices (title, message, body, notice_type, order_id) VALUES (?,?,?,'cancel',?)`
-      ).bind(title, `${order.order_no} のキャンセルが完了しました`, body, id).run();
+      await sb.from('notices').insert({
+        title, message: `${order.order_no} のキャンセルが完了しました`,
+        body, notice_type: 'cancel', order_id: id, created_at: jst,
+      });
     }
   }
 
@@ -95,46 +105,46 @@ admin.put('/orders/:id/status', async (c) => {
 
 // 印刷記録 → ステータスを「印刷済」に自動更新
 admin.put('/orders/:id/printed', async (c) => {
-  const id = c.req.param('id');
+  const id = Number(c.req.param('id'));
   const jst = nowJST();
-  await c.env.DB.prepare(
-    `UPDATE order_progress SET printed_at=?, updated_at=? WHERE order_id=?`
-  ).bind(jst, jst, id).run();
+  const sb = getSupabase(c.env);
+
+  await sb.from('order_progress').update({ printed_at: jst, updated_at: jst }).eq('order_id', id);
   // pending → printed へ自動遷移
-  await c.env.DB.prepare(
-    `UPDATE orders SET status='printed', updated_at=? WHERE id=? AND status='pending'`
-  ).bind(jst, id).run();
+  await sb.from('orders').update({ status: 'printed', updated_at: jst })
+    .eq('id', id).eq('status', 'pending');
   return c.json({ success: true });
 });
 
-// キャンセル依頼承認（管理者がキャンセル完了にする）
+// キャンセル依頼承認
 admin.put('/orders/:id/cancel-complete', async (c) => {
-  const id = c.req.param('id');
+  const id = Number(c.req.param('id'));
   const jst = nowJST();
-  await c.env.DB.prepare(
-    `UPDATE orders SET status='cancelled', updated_at=? WHERE id=?`
-  ).bind(jst, id).run();
+  const sb = getSupabase(c.env);
 
-  const order = await c.env.DB.prepare('SELECT * FROM orders WHERE id = ?').bind(id).first<any>();
+  await sb.from('orders').update({ status: 'cancelled', updated_at: jst }).eq('id', id);
+
+  const { data: order } = await sb.from('orders').select('*').eq('id', id).single();
   if (order) {
     const title = `【キャンセル完了】発注番号 ${order.order_no}`;
     const body  = `発注番号: ${order.order_no}\n発注元: ${order.store_name}${order.section_name ? ' / ' + order.section_name : ''}\n担当者: ${order.orderer_name || '-'}\nキャンセルが完了しました。`;
-    await c.env.DB.prepare(
-      `INSERT INTO notices (title, message, body, notice_type, order_id) VALUES (?,?,?,'cancel',?)`
-    ).bind(title, `${order.order_no} のキャンセルが完了しました`, body, id).run();
+    await sb.from('notices').insert({
+      title, message: `${order.order_no} のキャンセルが完了しました`,
+      body, notice_type: 'cancel', order_id: id, created_at: jst,
+    });
   }
   return c.json({ success: true });
 });
 
 // 受注履歴 単件削除
 admin.delete('/orders/:id', async (c) => {
-  const id = c.req.param('id');
-  // 関連レコードを先に削除してからordersを削除
-  await c.env.DB.prepare('DELETE FROM inspection_logs WHERE order_id=?').bind(id).run();
-  await c.env.DB.prepare('DELETE FROM order_items WHERE order_id=?').bind(id).run();
-  await c.env.DB.prepare('DELETE FROM order_progress WHERE order_id=?').bind(id).run();
-  await c.env.DB.prepare('DELETE FROM notices WHERE order_id=?').bind(id).run();
-  await c.env.DB.prepare('DELETE FROM orders WHERE id=?').bind(id).run();
+  const id = Number(c.req.param('id'));
+  const sb = getSupabase(c.env);
+  await sb.from('inspection_logs').delete().eq('order_id', id);
+  await sb.from('order_items').delete().eq('order_id', id);
+  await sb.from('order_progress').delete().eq('order_id', id);
+  await sb.from('notices').delete().eq('order_id', id);
+  await sb.from('orders').delete().eq('id', id);
   return c.json({ success: true });
 });
 
@@ -142,15 +152,14 @@ admin.delete('/orders/:id', async (c) => {
 admin.post('/orders/bulk-delete', async (c) => {
   const { ids } = await c.req.json();
   if (!Array.isArray(ids) || ids.length === 0) return c.json({ error: '削除対象がありません' }, 400);
-  // idは整数のみ許容（SQLインジェクション対策）
   const safeIds = ids.map((v: any) => parseInt(v, 10)).filter((v) => !isNaN(v));
   if (safeIds.length === 0) return c.json({ error: '有効なIDがありません' }, 400);
-  const placeholders = safeIds.map(() => '?').join(',');
-  await c.env.DB.prepare(`DELETE FROM inspection_logs WHERE order_id IN (${placeholders})`).bind(...safeIds).run();
-  await c.env.DB.prepare(`DELETE FROM order_items WHERE order_id IN (${placeholders})`).bind(...safeIds).run();
-  await c.env.DB.prepare(`DELETE FROM order_progress WHERE order_id IN (${placeholders})`).bind(...safeIds).run();
-  await c.env.DB.prepare(`DELETE FROM notices WHERE order_id IN (${placeholders})`).bind(...safeIds).run();
-  await c.env.DB.prepare(`DELETE FROM orders WHERE id IN (${placeholders})`).bind(...safeIds).run();
+  const sb = getSupabase(c.env);
+  await sb.from('inspection_logs').delete().in('order_id', safeIds);
+  await sb.from('order_items').delete().in('order_id', safeIds);
+  await sb.from('order_progress').delete().in('order_id', safeIds);
+  await sb.from('notices').delete().in('order_id', safeIds);
+  await sb.from('orders').delete().in('id', safeIds);
   return c.json({ deleted: safeIds.length });
 });
 
@@ -158,87 +167,103 @@ admin.post('/orders/bulk-delete', async (c) => {
 
 admin.get('/products', async (c) => {
   const search = c.req.query('search');
-  let sql = 'SELECT * FROM products';
-  const params: any[] = [];
+  const sb = getSupabase(c.env);
+
+  let query = sb.from('products').select('*').order('category').order('product_name');
   if (search) {
-    sql += ' WHERE product_name LIKE ? OR product_code LIKE ? OR barcode LIKE ? OR category LIKE ? OR gift_code LIKE ? OR unified_code LIKE ? OR supplier_name LIKE ?';
-    const q = `%${search}%`;
-    params.push(q, q, q, q, q, q, q);
+    query = query.or(
+      `product_name.ilike.%${search}%,product_code.ilike.%${search}%,barcode.ilike.%${search}%,category.ilike.%${search}%,gift_code.ilike.%${search}%,unified_code.ilike.%${search}%,supplier_name.ilike.%${search}%`
+    );
   }
-  sql += ' ORDER BY category, product_name';
-  const { results } = await c.env.DB.prepare(sql).bind(...params).all();
-  return c.json({ products: results });
+
+  const { data, error } = await query;
+  if (error) return c.json({ error: error.message }, 500);
+  return c.json({ products: data });
 });
 
 admin.post('/products', async (c) => {
   const b = await c.req.json();
   const jst = nowJST();
   if (!b.product_name) return c.json({ error: '商品名は必須です' }, 400);
-  const result = await c.env.DB.prepare(
-    `INSERT INTO products
-      (category, product_name, product_code, barcode, gift_code, unified_code,
-       supplier_code, supplier_name, stock_location, stock_ku, stock_banchi,
-       is_active, is_new, registered_at, updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
-  ).bind(
-    b.category||'', b.product_name, b.product_code||'', b.barcode||'',
-    b.gift_code||'', b.unified_code||'', b.supplier_code||'', b.supplier_name||'',
-    b.stock_location||'', b.stock_ku||null, b.stock_banchi||null,
-    b.is_active??1, b.is_new??0, jst, jst
-  ).run();
-  return c.json({ id: result.meta.last_row_id }, 201);
+  const sb = getSupabase(c.env);
+  const { data, error } = await sb.from('products').insert({
+    category: b.category || '',
+    product_name: b.product_name,
+    product_code: b.product_code || '',
+    barcode: b.barcode || '',
+    gift_code: b.gift_code || '',
+    unified_code: b.unified_code || '',
+    supplier_code: b.supplier_code || '',
+    supplier_name: b.supplier_name || '',
+    stock_location: b.stock_location || '',
+    stock_ku: b.stock_ku || null,
+    stock_banchi: b.stock_banchi || null,
+    is_active: b.is_active ?? 1,
+    is_new: b.is_new ?? 0,
+    registered_at: jst,
+    updated_at: jst,
+  }).select('id').single();
+  if (error) return c.json({ error: error.message }, 500);
+  return c.json({ id: data.id }, 201);
 });
 
 admin.put('/products/:id', async (c) => {
-  const id = c.req.param('id');
+  const id = Number(c.req.param('id'));
   const b = await c.req.json();
   const jst = nowJST();
-  await c.env.DB.prepare(
-    `UPDATE products SET
-      category=?, product_name=?, product_code=?, barcode=?,
-      gift_code=?, unified_code=?, supplier_code=?, supplier_name=?,
-      stock_location=?, stock_ku=?, stock_banchi=?,
-      is_active=?, is_new=?, updated_at=? WHERE id=?`
-  ).bind(
-    b.category||'', b.product_name, b.product_code||'', b.barcode||'',
-    b.gift_code||'', b.unified_code||'', b.supplier_code||'', b.supplier_name||'',
-    b.stock_location||'', b.stock_ku||null, b.stock_banchi||null,
-    b.is_active??1, b.is_new??0, jst, id
-  ).run();
+  const sb = getSupabase(c.env);
+  await sb.from('products').update({
+    category: b.category || '',
+    product_name: b.product_name,
+    product_code: b.product_code || '',
+    barcode: b.barcode || '',
+    gift_code: b.gift_code || '',
+    unified_code: b.unified_code || '',
+    supplier_code: b.supplier_code || '',
+    supplier_name: b.supplier_name || '',
+    stock_location: b.stock_location || '',
+    stock_ku: b.stock_ku || null,
+    stock_banchi: b.stock_banchi || null,
+    is_active: b.is_active ?? 1,
+    is_new: b.is_new ?? 0,
+    updated_at: jst,
+  }).eq('id', id);
   return c.json({ success: true });
 });
 
 admin.delete('/products/:id', async (c) => {
-  const id = c.req.param('id');
-  // order_items は product_id を参照しているが削除は許可（履歴は残す）
-  await c.env.DB.prepare('DELETE FROM products WHERE id=?').bind(id).run();
+  const sb = getSupabase(c.env);
+  await sb.from('products').delete().eq('id', Number(c.req.param('id')));
   return c.json({ success: true });
 });
 
-// 商品一括削除
-// D1 は bind() のバインド変数が最大99個のため、100件以上の場合は99件ずつチャンクに分割して実行
+// 商品一括削除（Supabaseはbind上限なし）
 admin.post('/products/bulk-delete', async (c) => {
   const { ids } = await c.req.json();
   if (!Array.isArray(ids) || ids.length === 0) return c.json({ error: '削除対象がありません' }, 400);
   const safeIds = ids.map((v: any) => parseInt(v, 10)).filter((v) => !isNaN(v));
   if (safeIds.length === 0) return c.json({ error: '有効なIDがありません' }, 400);
-  const CHUNK = 99;
-  for (let i = 0; i < safeIds.length; i += CHUNK) {
-    const chunk = safeIds.slice(i, i + CHUNK);
-    const placeholders = chunk.map(() => '?').join(',');
-    await c.env.DB.prepare(`DELETE FROM products WHERE id IN (${placeholders})`).bind(...chunk).run();
-  }
+  const sb = getSupabase(c.env);
+  await sb.from('products').delete().in('id', safeIds);
   return c.json({ deleted: safeIds.length });
 });
 
-// Excel取込（JSON行データで受信）
+// Excel取込
 admin.post('/products/import', async (c) => {
   const { rows } = await c.req.json();
   if (!Array.isArray(rows)) return c.json({ error: '不正なデータ形式です' }, 400);
   const jst = nowJST();
+  const sb = getSupabase(c.env);
   let count = 0;
+
+  const toStr = (v: unknown) => {
+    if (v == null || v === '') return '';
+    const s = String(v).trim();
+    if (/^\d+\.0+$/.test(s)) return String(parseInt(s, 10));
+    return s;
+  };
+
   for (const r of rows) {
-    // 日本語ヘッダー・英語ヘッダー両対応
     const category      = r['カテゴリ']       || r.category       || '';
     const unified_code  = r['統一コード']      || r.unified_code   || '';
     const gift_code     = r['ギフトコード']    || r.gift_code      || '';
@@ -248,30 +273,51 @@ admin.post('/products/import', async (c) => {
     const supplier_code = r['仕入先コード']    || r.supplier_code  || '';
     const supplier_name = r['仕入先名']        || r.supplier_name  || '';
     const stock_location= r['ストック場所']    || r.stock_location || '';
-    // stock_ku / stock_banchi は TEXT カラム（先頭0を保持するため文字列のまま保存）
-    const rawKu      = r['区']     ?? r.stock_ku     ?? null;
-    const rawBanchi  = r['番地']   ?? r.stock_banchi ?? null;
+    const rawKu     = r['区']   ?? r.stock_ku     ?? null;
+    const rawBanchi = r['番地'] ?? r.stock_banchi ?? null;
     const stock_ku     = (rawKu     !== '' && rawKu     != null) ? String(rawKu).trim()     || null : null;
     const stock_banchi = (rawBanchi !== '' && rawBanchi != null) ? String(rawBanchi).trim() || null : null;
-    // 全コード系フィールドは文字列として保存（先頭0・小数点を除去した整数文字列にする）
-    const toStr = (v: unknown) => {
-      if (v == null || v === '') return '';
-      const s = String(v).trim();
-      // "12345.0" → "12345" に正規化
-      if (/^\d+\.0+$/.test(s)) return String(parseInt(s, 10));
-      return s;
-    };
+
     if (!product_name) continue;
-    await c.env.DB.prepare(
-      `INSERT OR REPLACE INTO products
-        (category, product_name, product_code, barcode, gift_code, unified_code,
-         supplier_code, supplier_name, stock_location, stock_ku, stock_banchi, is_active, registered_at, updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,1,?,?)`
-    ).bind(
-      toStr(category), product_name, toStr(product_code), toStr(barcode),
-      toStr(gift_code), toStr(unified_code), toStr(supplier_code), toStr(supplier_name),
-      toStr(stock_location), stock_ku, stock_banchi, jst, jst  // stock_ku/banchi は文字列のまま渡す
-    ).run();
+
+    // barcode or product_code で既存レコードを検索してupsert
+    const { data: existing } = await sb
+      .from('products')
+      .select('id')
+      .eq('product_name', product_name)
+      .maybeSingle();
+
+    if (existing) {
+      await sb.from('products').update({
+        category: toStr(category),
+        product_code: toStr(product_code),
+        barcode: toStr(barcode),
+        gift_code: toStr(gift_code),
+        unified_code: toStr(unified_code),
+        supplier_code: toStr(supplier_code),
+        supplier_name: toStr(supplier_name),
+        stock_location: toStr(stock_location),
+        stock_ku, stock_banchi,
+        is_active: 1,
+        updated_at: jst,
+      }).eq('id', existing.id);
+    } else {
+      await sb.from('products').insert({
+        category: toStr(category),
+        product_name,
+        product_code: toStr(product_code),
+        barcode: toStr(barcode),
+        gift_code: toStr(gift_code),
+        unified_code: toStr(unified_code),
+        supplier_code: toStr(supplier_code),
+        supplier_name: toStr(supplier_name),
+        stock_location: toStr(stock_location),
+        stock_ku, stock_banchi,
+        is_active: 1,
+        registered_at: jst,
+        updated_at: jst,
+      });
+    }
     count++;
   }
   return c.json({ imported: count });
@@ -280,76 +326,96 @@ admin.post('/products/import', async (c) => {
 // ========== 発注元マスタ ==========
 
 admin.get('/stores', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT * FROM stores ORDER BY store_name').all();
-  return c.json({ stores: results });
+  const sb = getSupabase(c.env);
+  const { data, error } = await sb.from('stores').select('*').order('store_name');
+  if (error) return c.json({ error: error.message }, 500);
+  return c.json({ stores: data });
 });
 
 admin.post('/stores', async (c) => {
   const { store_name, section_name, phone, fax, login_id, password, is_test } = await c.req.json();
   if (!store_name || !login_id || !password) return c.json({ error: '店舗名・ログインID・パスワードは必須です' }, 400);
   const hash = await hashPassword(password);
-  const result = await c.env.DB.prepare(
-    'INSERT INTO stores (store_name, section_name, phone, fax, login_id, password_hash, is_test) VALUES (?,?,?,?,?,?,?)'
-  ).bind(store_name, section_name||'', phone||'', fax||'', login_id, hash, is_test?1:0).run();
-  return c.json({ id: result.meta.last_row_id }, 201);
+  const sb = getSupabase(c.env);
+  const { data, error } = await sb.from('stores').insert({
+    store_name, section_name: section_name || '', phone: phone || '',
+    fax: fax || '', login_id, password_hash: hash, is_test: is_test ? 1 : 0,
+  }).select('id').single();
+  if (error) return c.json({ error: error.message }, 500);
+  return c.json({ id: data.id }, 201);
 });
 
 admin.put('/stores/:id', async (c) => {
-  const id = c.req.param('id');
+  const id = Number(c.req.param('id'));
   const { store_name, section_name, phone, fax, login_id, password, is_test } = await c.req.json();
   const jst = nowJST();
+  const sb = getSupabase(c.env);
   if (password) {
     const hash = await hashPassword(password);
-    await c.env.DB.prepare(
-      `UPDATE stores SET store_name=?,section_name=?,phone=?,fax=?,login_id=?,password_hash=?,is_test=?,updated_at=? WHERE id=?`
-    ).bind(store_name, section_name||'', phone||'', fax||'', login_id, hash, is_test?1:0, jst, id).run();
+    await sb.from('stores').update({
+      store_name, section_name: section_name || '', phone: phone || '',
+      fax: fax || '', login_id, password_hash: hash,
+      is_test: is_test ? 1 : 0, updated_at: jst,
+    }).eq('id', id);
   } else {
-    await c.env.DB.prepare(
-      `UPDATE stores SET store_name=?,section_name=?,phone=?,fax=?,login_id=?,is_test=?,updated_at=? WHERE id=?`
-    ).bind(store_name, section_name||'', phone||'', fax||'', login_id, is_test?1:0, jst, id).run();
+    await sb.from('stores').update({
+      store_name, section_name: section_name || '', phone: phone || '',
+      fax: fax || '', login_id, is_test: is_test ? 1 : 0, updated_at: jst,
+    }).eq('id', id);
   }
   return c.json({ success: true });
 });
 
 admin.delete('/stores/:id', async (c) => {
-  await c.env.DB.prepare('DELETE FROM stores WHERE id=?').bind(c.req.param('id')).run();
+  const sb = getSupabase(c.env);
+  await sb.from('stores').delete().eq('id', Number(c.req.param('id')));
   return c.json({ success: true });
 });
 
 // ========== お知らせ ==========
 
 admin.get('/notices', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT * FROM notices ORDER BY created_at DESC').all();
-  return c.json({ notices: results });
+  const sb = getSupabase(c.env);
+  const { data, error } = await sb.from('notices').select('*').order('created_at', { ascending: false });
+  if (error) return c.json({ error: error.message }, 500);
+  return c.json({ notices: data });
 });
 
 admin.post('/notices', async (c) => {
   const { title, message, body: nb, notice_type, expire_at } = await c.req.json();
   if (!title) return c.json({ error: 'タイトルは必須です' }, 400);
   const jst = nowJST();
-  const result = await c.env.DB.prepare(
-    'INSERT INTO notices (title, message, body, notice_type, expire_at, created_at) VALUES (?,?,?,?,?,?)'
-  ).bind(title, message||'', nb||'', notice_type||'general', expire_at||null, jst).run();
-  return c.json({ id: result.meta.last_row_id }, 201);
+  const sb = getSupabase(c.env);
+  const { data, error } = await sb.from('notices').insert({
+    title, message: message || '', body: nb || '',
+    notice_type: notice_type || 'general',
+    expire_at: expire_at || null, created_at: jst,
+  }).select('id').single();
+  if (error) return c.json({ error: error.message }, 500);
+  return c.json({ id: data.id }, 201);
 });
 
 admin.put('/notices/:id', async (c) => {
   const { title, message, body: nb, notice_type, expire_at } = await c.req.json();
-  await c.env.DB.prepare(
-    'UPDATE notices SET title=?,message=?,body=?,notice_type=?,expire_at=? WHERE id=?'
-  ).bind(title, message||'', nb||'', notice_type||'general', expire_at||null, c.req.param('id')).run();
+  const sb = getSupabase(c.env);
+  await sb.from('notices').update({
+    title, message: message || '', body: nb || '',
+    notice_type: notice_type || 'general', expire_at: expire_at || null,
+  }).eq('id', Number(c.req.param('id')));
   return c.json({ success: true });
 });
 
 admin.delete('/notices/:id', async (c) => {
-  await c.env.DB.prepare('DELETE FROM notices WHERE id=?').bind(c.req.param('id')).run();
+  const sb = getSupabase(c.env);
+  await sb.from('notices').delete().eq('id', Number(c.req.param('id')));
   return c.json({ success: true });
 });
 
 // ========== メール設定 ==========
 
 admin.get('/email-settings', async (c) => {
-  const s = await c.env.DB.prepare('SELECT * FROM email_settings WHERE id=1').first<any>();
+  const sb = getSupabase(c.env);
+  const { data: s } = await sb.from('email_settings').select('*').eq('id', 1).single();
   if (s) s.resend_api_key = s.resend_api_key ? '***' : '';
   return c.json({ settings: s });
 });
@@ -357,21 +423,23 @@ admin.get('/email-settings', async (c) => {
 admin.put('/email-settings', async (c) => {
   const { main_email, sub_email, resend_api_key } = await c.req.json();
   const jst = nowJST();
-  const ex = await c.env.DB.prepare('SELECT id FROM email_settings WHERE id=1').first();
+  const sb = getSupabase(c.env);
+  const { data: ex } = await sb.from('email_settings').select('id').eq('id', 1).single();
   if (ex) {
     if (resend_api_key && resend_api_key !== '***') {
-      await c.env.DB.prepare(`UPDATE email_settings SET main_email=?,sub_email=?,resend_api_key=?,updated_at=? WHERE id=1`).bind(main_email||'', sub_email||'', resend_api_key, jst).run();
+      await sb.from('email_settings').update({ main_email: main_email || '', sub_email: sub_email || '', resend_api_key, updated_at: jst }).eq('id', 1);
     } else {
-      await c.env.DB.prepare(`UPDATE email_settings SET main_email=?,sub_email=?,updated_at=? WHERE id=1`).bind(main_email||'', sub_email||'', jst).run();
+      await sb.from('email_settings').update({ main_email: main_email || '', sub_email: sub_email || '', updated_at: jst }).eq('id', 1);
     }
   } else {
-    await c.env.DB.prepare('INSERT INTO email_settings (id,main_email,sub_email,resend_api_key) VALUES (1,?,?,?)').bind(main_email||'', sub_email||'', resend_api_key||'').run();
+    await sb.from('email_settings').insert({ id: 1, main_email: main_email || '', sub_email: sub_email || '', resend_api_key: resend_api_key || '' });
   }
   return c.json({ success: true });
 });
 
 admin.post('/email-settings/test', async (c) => {
-  const s = await c.env.DB.prepare('SELECT * FROM email_settings WHERE id=1').first<any>();
+  const sb = getSupabase(c.env);
+  const { data: s } = await sb.from('email_settings').select('*').eq('id', 1).single();
   if (!s?.resend_api_key || !s?.main_email) return c.json({ error: 'メール設定が未完了です' }, 400);
   try {
     const res = await fetch('https://api.resend.com/emails', {
@@ -387,19 +455,23 @@ admin.post('/email-settings/test', async (c) => {
 // ========== システム設定 ==========
 
 admin.get('/settings', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT * FROM site_settings').all();
+  const sb = getSupabase(c.env);
+  const { data, error } = await sb.from('site_settings').select('*');
+  if (error) return c.json({ error: error.message }, 500);
   const settings: Record<string, string> = {};
-  for (const r of results as any[]) settings[r.key] = r.value;
+  for (const r of data || []) settings[r.key] = r.value;
   return c.json({ settings });
 });
 
 admin.put('/settings', async (c) => {
   const body = await c.req.json();
   const jst = nowJST();
+  const sb = getSupabase(c.env);
   for (const [key, value] of Object.entries(body)) {
-    await c.env.DB.prepare(
-      `INSERT INTO site_settings (key,value,updated_at) VALUES (?,?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at`
-    ).bind(key, value as string, jst).run();
+    await sb.from('site_settings').upsert(
+      { key, value: value as string, updated_at: jst },
+      { onConflict: 'key' }
+    );
   }
   return c.json({ success: true });
 });
@@ -408,125 +480,144 @@ admin.put('/admins/password', async (c) => {
   const adminId = c.get('adminId');
   const { current_password, new_password } = await c.req.json();
   if (!current_password || !new_password) return c.json({ error: '入力してください' }, 400);
-  const rec = await c.env.DB.prepare('SELECT * FROM admins WHERE id=?').bind(adminId).first<any>();
+  const sb = getSupabase(c.env);
+  const { data: rec } = await sb.from('admins').select('*').eq('id', adminId!).single();
   if (!rec) return c.json({ error: '管理者が見つかりません' }, 404);
   const { verifyPassword } = await import('../auth');
   if (!(await verifyPassword(current_password, rec.password_hash))) return c.json({ error: '現在のパスワードが正しくありません' }, 401);
   const h = await hashPassword(new_password);
-  await c.env.DB.prepare('UPDATE admins SET password_hash=? WHERE id=?').bind(h, adminId).run();
+  await sb.from('admins').update({ password_hash: h }).eq('id', adminId!);
   return c.json({ success: true });
 });
 
 admin.get('/admins', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT id,username,display_name,created_at FROM admins').all();
-  return c.json({ admins: results });
+  const sb = getSupabase(c.env);
+  const { data, error } = await sb.from('admins').select('id, username, display_name, created_at');
+  if (error) return c.json({ error: error.message }, 500);
+  return c.json({ admins: data });
 });
 
 admin.post('/admins', async (c) => {
   const { username, password, display_name } = await c.req.json();
   if (!username || !password) return c.json({ error: 'ユーザー名とパスワードは必須です' }, 400);
   const h = await hashPassword(password);
-  const r = await c.env.DB.prepare('INSERT INTO admins (username,password_hash,display_name) VALUES (?,?,?)').bind(username, h, display_name||username).run();
-  return c.json({ id: r.meta.last_row_id }, 201);
+  const sb = getSupabase(c.env);
+  const { data, error } = await sb.from('admins').insert({
+    username, password_hash: h, display_name: display_name || username,
+  }).select('id').single();
+  if (error) return c.json({ error: error.message }, 500);
+  return c.json({ id: data.id }, 201);
 });
 
 // ========== 検品 ==========
 
 admin.get('/orders/:id/inspections', async (c) => {
-  const { results } = await c.env.DB.prepare(
-    'SELECT * FROM inspection_logs WHERE order_id=? ORDER BY scanned_at'
-  ).bind(c.req.param('id')).all();
-  return c.json({ inspections: results });
+  const sb = getSupabase(c.env);
+  const { data, error } = await sb
+    .from('inspection_logs')
+    .select('*')
+    .eq('order_id', Number(c.req.param('id')))
+    .order('scanned_at');
+  if (error) return c.json({ error: error.message }, 500);
+  return c.json({ inspections: data });
 });
 
 // 検品スキャン記録（数量チェック付き）
 admin.post('/orders/:id/inspect', async (c) => {
-  const orderId = c.req.param('id');
+  const orderId = Number(c.req.param('id'));
   const { barcode_scanned, scanned_by } = await c.req.json();
   const jst = nowJST();
+  const sb = getSupabase(c.env);
 
-  // 発注明細にバーコードが含まれているか
-  const item = await c.env.DB.prepare(
-    'SELECT * FROM order_items WHERE order_id=? AND barcode=?'
-  ).bind(orderId, barcode_scanned).first<any>();
+  const { data: item } = await sb
+    .from('order_items')
+    .select('*')
+    .eq('order_id', orderId)
+    .eq('barcode', barcode_scanned)
+    .maybeSingle();
 
   const is_match = item ? 1 : 0;
 
-  await c.env.DB.prepare(
-    'INSERT INTO inspection_logs (order_id,product_id,barcode_scanned,is_match,scanned_by,scanned_at) VALUES (?,?,?,?,?,?)'
-  ).bind(orderId, item?.product_id||null, barcode_scanned, is_match, scanned_by||'', jst).run();
+  await sb.from('inspection_logs').insert({
+    order_id: orderId,
+    product_id: item?.product_id || null,
+    barcode_scanned,
+    is_match,
+    scanned_by: scanned_by || '',
+    scanned_at: jst,
+  });
 
-  // スキャン済み数チェック
   let allCompleted = false;
   if (is_match) {
-    // この商品の発注数とスキャン済み数を比較
-    const { results: allItems } = await c.env.DB.prepare(
-      'SELECT * FROM order_items WHERE order_id=?'
-    ).bind(orderId).all<any>();
+    const { data: allItems } = await sb.from('order_items').select('*').eq('order_id', orderId);
+    const { data: logs } = await sb
+      .from('inspection_logs')
+      .select('barcode_scanned')
+      .eq('order_id', orderId)
+      .eq('is_match', 1);
 
-    const { results: logs } = await c.env.DB.prepare(
-      'SELECT barcode_scanned FROM inspection_logs WHERE order_id=? AND is_match=1'
-    ).bind(orderId).all<any>();
-
-    // バーコードごとのスキャン数
     const scannedCount: Record<string, number> = {};
-    for (const l of logs) scannedCount[l.barcode_scanned] = (scannedCount[l.barcode_scanned]||0) + 1;
+    for (const l of logs || []) scannedCount[l.barcode_scanned] = (scannedCount[l.barcode_scanned] || 0) + 1;
 
-    // 全商品の発注数 <= スキャン数か確認（バーコードなし商品はスキップ）
-    const barcodeItems = allItems.filter((it: any) => it.barcode && it.barcode.trim() !== '');
+    const barcodeItems = (allItems || []).filter((it: any) => it.barcode && it.barcode.trim() !== '');
     allCompleted = barcodeItems.length > 0 &&
-      barcodeItems.every((it: any) => (scannedCount[it.barcode]||0) >= it.quantity);
+      barcodeItems.every((it: any) => (scannedCount[it.barcode] || 0) >= it.quantity);
 
     if (allCompleted) {
-      // 検品中ステータスに自動遷移
-      await c.env.DB.prepare(
-        `UPDATE orders SET status='completed', updated_at=? WHERE id=? AND status='inspecting'`
-      ).bind(jst, orderId).run();
-      await c.env.DB.prepare(
-        `UPDATE order_progress SET is_completed=1, completed_at=?, updated_at=? WHERE order_id=?`
-      ).bind(jst, jst, orderId).run();
+      await sb.from('orders').update({ status: 'completed', updated_at: jst })
+        .eq('id', orderId).eq('status', 'inspecting');
+      await sb.from('order_progress').update({ is_completed: 1, completed_at: jst, updated_at: jst })
+        .eq('order_id', orderId);
     }
   }
 
-  return c.json({ is_match: !!is_match, product: item||null, all_completed: allCompleted });
+  return c.json({ is_match: !!is_match, product: item || null, all_completed: allCompleted });
 });
 
 // 検品開始 → ステータスを inspecting に
 admin.put('/orders/:id/start-inspection', async (c) => {
-  const id = c.req.param('id');
+  const id = Number(c.req.param('id'));
   const jst = nowJST();
-  await c.env.DB.prepare(
-    `UPDATE orders SET status='inspecting', updated_at=? WHERE id=? AND status IN ('pending','printed')`
-  ).bind(jst, id).run();
+  const sb = getSupabase(c.env);
+  await sb.from('orders').update({ status: 'inspecting', updated_at: jst })
+    .eq('id', id).in('status', ['pending', 'printed']);
   return c.json({ success: true });
 });
 
 admin.delete('/orders/:id/inspections', async (c) => {
-  await c.env.DB.prepare('DELETE FROM inspection_logs WHERE order_id=?').bind(c.req.param('id')).run();
+  const sb = getSupabase(c.env);
+  await sb.from('inspection_logs').delete().eq('order_id', Number(c.req.param('id')));
   return c.json({ success: true });
 });
 
 // 検品完了 → ステータスを completed に
 admin.post('/orders/:id/complete-inspection', async (c) => {
-  const id = c.req.param('id');
+  const id = Number(c.req.param('id'));
   const jst = nowJST();
-  await c.env.DB.prepare(
-    `UPDATE orders SET status='completed', updated_at=? WHERE id=?`
-  ).bind(jst, id).run();
+  const sb = getSupabase(c.env);
+  await sb.from('orders').update({ status: 'completed', updated_at: jst }).eq('id', id);
   return c.json({ success: true });
 });
 
 // ========== 統計 ==========
 
 admin.get('/stats', async (c) => {
-  const pending    = await c.env.DB.prepare("SELECT COUNT(*) as cnt FROM orders WHERE status='pending'").first<any>();
-  const active     = await c.env.DB.prepare("SELECT COUNT(*) as cnt FROM orders WHERE status IN ('printed','inspecting')").first<any>();
-  const completed  = await c.env.DB.prepare("SELECT COUNT(*) as cnt FROM orders WHERE status='completed'").first<any>();
-  const products   = await c.env.DB.prepare("SELECT COUNT(*) as cnt FROM products WHERE is_active=1").first<any>();
-  const cancel_req = await c.env.DB.prepare("SELECT COUNT(*) as cnt FROM orders WHERE status='cancel_request'").first<any>();
+  const sb = getSupabase(c.env);
+  const [pendingR, activeR, completedR, productsR, cancelR] = await Promise.all([
+    sb.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    sb.from('orders').select('id', { count: 'exact', head: true }).in('status', ['printed', 'inspecting']),
+    sb.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'completed'),
+    sb.from('products').select('id', { count: 'exact', head: true }).eq('is_active', 1),
+    sb.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'cancel_request'),
+  ]);
   return c.json({
-    orders: { pending: pending?.cnt||0, active: active?.cnt||0, completed: completed?.cnt||0, cancel_request: cancel_req?.cnt||0 },
-    products: products?.cnt||0,
+    orders: {
+      pending: pendingR.count || 0,
+      active: activeR.count || 0,
+      completed: completedR.count || 0,
+      cancel_request: cancelR.count || 0,
+    },
+    products: productsR.count || 0,
   });
 });
 

@@ -20,9 +20,11 @@ app.route('/api/admin', adminRoutes);
 
 // Public settings
 app.get('/api/settings', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT key, value FROM site_settings').all();
+  const { getSupabase } = await import('./lib/db');
+  const sb = getSupabase(c.env);
+  const { data } = await sb.from('site_settings').select('key, value');
   const settings: Record<string, string> = {};
-  for (const row of results as any[]) {
+  for (const row of (data || []) as any[]) {
     settings[row.key] = row.value;
   }
   return c.json({ settings });
