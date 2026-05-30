@@ -473,7 +473,7 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
   <div class="modal-box" style="max-width:560px">
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-file-excel p-accent"></i>商品Excel取込</h2>
-      <button onclick="closeModal('importModal')" class="text-gray-500 text-xl"><i class="fas fa-times"></i></button>
+      <button onclick="closeModal('importModal')" class="text-gray-500 text-xl" id="importCloseBtn"><i class="fas fa-times"></i></button>
     </div>
     <p class="text-sm text-gray-700 mb-3">1行目をヘッダーとして読み込みます。<br>列名: <code class="bg-gray-100 px-1 rounded text-gray-700">カテゴリ / 統一コード / ギフトコード / 商品名 / 商品記号 / バーコード / 仕入先コード / 仕入先名 / ストック場所 / 区 / 番地</code></p>
     <div class="upload-zone" id="importDropZone" onclick="document.getElementById('importFile').click()">
@@ -482,9 +482,20 @@ input:checked+.toggle-slider:before{transform:translateX(20px);}
       <input type="file" id="importFile" accept=".xlsx,.xls" class="hidden" onchange="handleImportFile(this)">
     </div>
     <div id="importPreview" class="mt-3"></div>
-    <div class="flex gap-3 mt-4">
+    <!-- プログレスバーエリア（取込中のみ表示） -->
+    <div id="importProgressArea" class="hidden mt-4">
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-sm font-semibold text-gray-700"><i class="fas fa-spinner fa-spin mr-2 text-blue-500"></i>商品マスタ取り込み中...</span>
+        <span id="importProgressText" class="text-sm font-bold text-blue-600">0%</span>
+      </div>
+      <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+        <div id="importProgressBar" class="h-4 rounded-full transition-all duration-300" style="width:0%;background:linear-gradient(90deg,#3b82f6,#6366f1)"></div>
+      </div>
+      <p id="importProgressDetail" class="text-xs text-gray-500 mt-1">準備中...</p>
+    </div>
+    <div class="flex gap-3 mt-4" id="importActionBtns">
       <button onclick="executeImport()" id="importBtn" class="btn-p hidden"><i class="fas fa-upload mr-1"></i>取込実行</button>
-      <button onclick="closeModal('importModal')" class="btn-s">閉じる</button>
+      <button onclick="closeModal('importModal')" class="btn-s" id="importCancelBtn">閉じる</button>
     </div>
   </div>
 </div>
@@ -1116,7 +1127,18 @@ async function exportProducts() {
 
 // ========== Excel取込 ==========
 var importRows = [];
-function openImportModal() { importRows = []; document.getElementById('importPreview').innerHTML = ''; document.getElementById('importBtn').classList.add('hidden'); document.getElementById('importFile').value=''; document.getElementById('importModal').classList.remove('hidden'); }
+function openImportModal() {
+  importRows = [];
+  document.getElementById('importPreview').innerHTML = '';
+  document.getElementById('importBtn').classList.add('hidden');
+  document.getElementById('importFile').value = '';
+  document.getElementById('importProgressArea').classList.add('hidden');
+  document.getElementById('importActionBtns').classList.remove('hidden');
+  document.getElementById('importCloseBtn').disabled = false;
+  document.getElementById('importCancelBtn').disabled = false;
+  document.getElementById('importDropZone').classList.remove('hidden');
+  document.getElementById('importModal').classList.remove('hidden');
+}
 
 function handleImportFile(input) {
   var file = input.files[0]; if (!file) return;
@@ -1144,12 +1166,76 @@ function handleImportFile(input) {
   reader.readAsBinaryString(file);
 }
 
+// チャンクサイズ（1回のAPIコールで送る件数）
+var IMPORT_CHUNK_SIZE = 50;
+
 async function executeImport() {
   if (!importRows.length) return;
-  var res = await apiFetch('/api/admin/products/import', {method:'POST', body:JSON.stringify({rows:importRows})});
-  var d = await res.json();
-  if (res.ok) { showToast(d.imported + '件取込みました'); closeModal('importModal'); loadProducts(); }
-  else showToast(d.error || '取込失敗', 'error');
+  var total = importRows.length;
+
+  // UIを「取込中」状態に切り替え
+  document.getElementById('importBtn').classList.add('hidden');
+  document.getElementById('importDropZone').classList.add('hidden');
+  document.getElementById('importCloseBtn').disabled = true;
+  document.getElementById('importCancelBtn').disabled = true;
+  document.getElementById('importProgressArea').classList.remove('hidden');
+  _updateImportProgress(0, total);
+
+  var imported = 0;
+  var errors = 0;
+
+  try {
+    // チャンク分割して順次送信
+    for (var i = 0; i < total; i += IMPORT_CHUNK_SIZE) {
+      var chunk = importRows.slice(i, i + IMPORT_CHUNK_SIZE);
+      var res = await apiFetch('/api/admin/products/import', {
+        method: 'POST',
+        body: JSON.stringify({ rows: chunk })
+      });
+      var d = await res.json();
+      if (res.ok) {
+        imported += d.imported || 0;
+      } else {
+        errors++;
+      }
+      // プログレス更新
+      var done = Math.min(i + IMPORT_CHUNK_SIZE, total);
+      _updateImportProgress(done, total);
+    }
+
+    // 完了
+    document.getElementById('importProgressBar').style.width = '100%';
+    document.getElementById('importProgressText').textContent = '完了!';
+    document.getElementById('importProgressDetail').textContent =
+      imported + '件取込みました' + (errors > 0 ? '（エラー: ' + errors + 'チャンク）' : '');
+    document.getElementById('importProgressArea').querySelector('span').innerHTML =
+      '<i class="fas fa-check-circle mr-2 text-green-500"></i>取り込み完了';
+    document.getElementById('importProgressBar').style.background = 'linear-gradient(90deg,#10b981,#059669)';
+    document.getElementById('importCancelBtn').disabled = false;
+    document.getElementById('importCancelBtn').textContent = '閉じる';
+    document.getElementById('importCloseBtn').disabled = false;
+
+    if (errors === 0) {
+      showToast(imported + '件取込みました');
+    } else {
+      showToast(imported + '件取込みました（一部エラーあり）', 'error');
+    }
+    loadProducts();
+
+  } catch (err) {
+    document.getElementById('importProgressDetail').textContent = 'エラーが発生しました: ' + err.message;
+    document.getElementById('importCancelBtn').disabled = false;
+    document.getElementById('importCloseBtn').disabled = false;
+    showToast('取込中にエラーが発生しました', 'error');
+  }
+}
+
+function _updateImportProgress(done, total) {
+  var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  document.getElementById('importProgressBar').style.width = pct + '%';
+  document.getElementById('importProgressText').textContent = pct + '%';
+  document.getElementById('importProgressDetail').textContent =
+    done + ' / ' + total + ' 件処理中...';
 }
 
 // ========== 発注元マスタ ==========
