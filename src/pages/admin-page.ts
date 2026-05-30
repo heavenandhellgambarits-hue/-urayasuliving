@@ -1181,7 +1181,8 @@ async function executeImport() {
   document.getElementById('importProgressArea').classList.remove('hidden');
   _updateImportProgress(0, total);
 
-  var imported = 0;
+  var totalInserted = 0;
+  var totalUpdated  = 0;
   var errors = 0;
 
   try {
@@ -1194,7 +1195,8 @@ async function executeImport() {
       });
       var d = await res.json();
       if (res.ok) {
-        imported += d.imported || 0;
+        totalInserted += d.inserted || 0;
+        totalUpdated  += d.updated  || 0;
       } else {
         errors++;
       }
@@ -1203,11 +1205,23 @@ async function executeImport() {
       _updateImportProgress(done, total);
     }
 
+    // 完了メッセージ組み立て
+    var resultMsg = '';
+    if (totalInserted > 0 && totalUpdated > 0) {
+      resultMsg = '新規追加 ' + totalInserted + '件 / 更新 ' + totalUpdated + '件';
+    } else if (totalInserted > 0) {
+      resultMsg = totalInserted + '件を新規追加しました';
+    } else if (totalUpdated > 0) {
+      resultMsg = totalUpdated + '件を更新しました';
+    } else {
+      resultMsg = '取込完了（変更なし）';
+    }
+    if (errors > 0) resultMsg += '（エラー: ' + errors + 'チャンク）';
+
     // 完了
     document.getElementById('importProgressBar').style.width = '100%';
     document.getElementById('importProgressText').textContent = '完了!';
-    document.getElementById('importProgressDetail').textContent =
-      imported + '件取込みました' + (errors > 0 ? '（エラー: ' + errors + 'チャンク）' : '');
+    document.getElementById('importProgressDetail').textContent = resultMsg;
     document.getElementById('importProgressArea').querySelector('span').innerHTML =
       '<i class="fas fa-check-circle mr-2 text-green-500"></i>取り込み完了';
     document.getElementById('importProgressBar').style.background = 'linear-gradient(90deg,#10b981,#059669)';
@@ -1216,9 +1230,9 @@ async function executeImport() {
     document.getElementById('importCloseBtn').disabled = false;
 
     if (errors === 0) {
-      showToast(imported + '件取込みました');
+      showToast(resultMsg);
     } else {
-      showToast(imported + '件取込みました（一部エラーあり）', 'error');
+      showToast(resultMsg, 'error');
     }
     loadProducts();
 

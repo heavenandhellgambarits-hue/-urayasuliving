@@ -169,7 +169,7 @@ admin.get('/products', async (c) => {
   const search = c.req.query('search');
   const sb = getSupabase(c.env);
 
-  let query = sb.from('products').select('*').order('category').order('product_name');
+  let query = sb.from('products').select('*').order('category').order('product_name').limit(10000);
   if (search) {
     query = query.or(
       `product_name.ilike.%${search}%,product_code.ilike.%${search}%,barcode.ilike.%${search}%,category.ilike.%${search}%,gift_code.ilike.%${search}%,unified_code.ilike.%${search}%,supplier_name.ilike.%${search}%`
@@ -254,7 +254,8 @@ admin.post('/products/import', async (c) => {
   if (!Array.isArray(rows)) return c.json({ error: '不正なデータ形式です' }, 400);
   const jst = nowJST();
   const sb = getSupabase(c.env);
-  let count = 0;
+  let inserted = 0;
+  let updated = 0;
 
   const toStr = (v: unknown) => {
     if (v == null || v === '') return '';
@@ -301,6 +302,7 @@ admin.post('/products/import', async (c) => {
         is_active: 1,
         updated_at: jst,
       }).eq('id', existing.id);
+      updated++;
     } else {
       await sb.from('products').insert({
         category: toStr(category),
@@ -317,10 +319,10 @@ admin.post('/products/import', async (c) => {
         registered_at: jst,
         updated_at: jst,
       });
+      inserted++;
     }
-    count++;
   }
-  return c.json({ imported: count });
+  return c.json({ imported: inserted + updated, inserted, updated });
 });
 
 // ========== 発注元マスタ ==========
