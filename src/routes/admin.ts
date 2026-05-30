@@ -299,30 +299,64 @@ admin.post('/products/import', async (c) => {
     return c.json({ imported: 0, inserted: 0, updated: 0, skipped, errors: 0 });
   }
 
-  // ★ チャンク内全商品名を1回のINクエリでまとめてSELECT（N回→1回に削減）
+  // ★ チャンク内全商品名を1回のINクエリでまとめてSELECT
+  //    同名商品が複数ある場合もすべて取得するため全フィールドを取得
   const names = parsed.map(p => p.product_name);
   const { data: existingRows, error: findErr } = await sb
     .from('products')
-    .select('id, product_name')
+    .select('product_name, gift_code, unified_code, product_code, barcode, category, supplier_code, supplier_name, stock_location, stock_ku, stock_banchi')
     .in('product_name', names);
 
   if (findErr) {
     return c.json({ imported: 0, inserted: 0, updated: 0, skipped, errors: parsed.length });
   }
 
-  // 既存商品名→idのマップを作成
-  const existingMap = new Map<string, number>(
-    (existingRows || []).map((r: { id: number; product_name: string }) => [r.product_name, r.id])
-  );
+  // ★ レコード全体の一致判定用：同名商品の全既存レコードをリストで保持
+  //    商品名 → 既存レコード配列 のマップ
+  type ExistingRow = {
+    product_name: string; gift_code: string; unified_code: string;
+    product_code: string; barcode: string; category: string;
+    supplier_code: string; supplier_name: string; stock_location: string;
+    stock_ku: string | null; stock_banchi: string | null;
+  };
+  const existingByName = new Map<string, ExistingRow[]>();
+  for (const r of (existingRows || []) as ExistingRow[]) {
+    const list = existingByName.get(r.product_name) || [];
+    list.push(r);
+    existingByName.set(r.product_name, list);
+  }
 
-  // 新規INSERTとスキップ（既存）に仕分け
-  // ★ 既存商品名は上書きせずスキップ（重複登録防止）
-  const toInsert = parsed.filter(p => !existingMap.has(p.product_name));
-  const toSkip   = parsed.filter(p =>  existingMap.has(p.product_name));
-  skipped += toSkip.length;
+  // ★ 同一レコード判定：比較対象フィールド全てが一致すればスキップ
+  //    商品名・ギフトコード・統一コード・商品記号・バーコード・カテゴリ・
+  //    仕入先コード・仕入先名・ストック場所・区・番地
+  const norm = (v: string | null | undefined) => (v == null ? '' : String(v).trim());
+  function isDuplicate(p: ParsedRow, existingList: ExistingRow[]): boolean {
+    return existingList.some(e =>
+      norm(e.gift_code)      === norm(p.gift_code)      &&
+      norm(e.unified_code)   === norm(p.unified_code)   &&
+      norm(e.product_code)   === norm(p.product_code)   &&
+      norm(e.barcode)        === norm(p.barcode)        &&
+      norm(e.category)       === norm(p.category)       &&
+      norm(e.supplier_code)  === norm(p.supplier_code)  &&
+      norm(e.supplier_name)  === norm(p.supplier_name)  &&
+      norm(e.stock_location) === norm(p.stock_location) &&
+      norm(e.stock_ku)       === norm(p.stock_ku)       &&
+      norm(e.stock_banchi)   === norm(p.stock_banchi)
+    );
+  }
 
-  // ★ 新規INSERT：1件ずつ直列INSERT
-  // バルクINSERTは1件でも制約違反があると全件失敗するため個別に処理
+  // 仕分け：完全一致レコードはスキップ、それ以外はINSERT
+  const toInsert: ParsedRow[] = [];
+  for (const p of parsed) {
+    const existingList = existingByName.get(p.product_name);
+    if (existingList && isDuplicate(p, existingList)) {
+      skipped++;  // 全フィールド一致 → スキップ
+    } else {
+      toInsert.push(p);  // 新規 or 同名でも内容が異なる → INSERT
+    }
+  }
+
+  // ★ INSERT：1件ずつ直列
   // Cloudflare Workers 50サブリクエスト制限内（SELECT1 + INSERT≦4 = ≦5回）で安全
   for (const p of toInsert) {
     const { error: insertErr } = await sb.from('products').insert({
