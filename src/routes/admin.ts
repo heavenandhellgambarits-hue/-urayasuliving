@@ -266,67 +266,91 @@ admin.post('/products/import', async (c) => {
     return s;
   };
 
+  // 行データをパース（商品名空はスキップ）
+  type ParsedRow = {
+    product_name: string;
+    category: string; unified_code: string; gift_code: string;
+    product_code: string; barcode: string;
+    supplier_code: string; supplier_name: string; stock_location: string;
+    stock_ku: string | null; stock_banchi: string | null;
+  };
+  const parsed: ParsedRow[] = [];
   for (const r of rows) {
-    const category      = r['カテゴリ']       || r.category       || '';
-    const unified_code  = r['統一コード']      || r.unified_code   || '';
-    const gift_code     = r['ギフトコード']    || r.gift_code      || '';
-    const product_name  = (r['商品名']         || r.product_name   || '').trim();
-    const product_code  = r['商品記号']        || r.product_code   || '';
-    const barcode       = r['バーコード']      || r.barcode        || '';
-    const supplier_code = r['仕入先コード']    || r.supplier_code  || '';
-    const supplier_name = r['仕入先名']        || r.supplier_name  || '';
-    const stock_location= r['ストック場所']    || r.stock_location || '';
+    const product_name = (r['商品名'] || r.product_name || '').trim();
+    if (!product_name) { skipped++; continue; }
     const rawKu     = r['区']   ?? r.stock_ku     ?? null;
     const rawBanchi = r['番地'] ?? r.stock_banchi ?? null;
-    const stock_ku     = (rawKu     !== '' && rawKu     != null) ? String(rawKu).trim()     || null : null;
-    const stock_banchi = (rawBanchi !== '' && rawBanchi != null) ? String(rawBanchi).trim() || null : null;
-
-    // 商品名が空の行はスキップ（カウントして返す）
-    if (!product_name) { skipped++; continue; }
-
-    // 商品名で既存レコードを検索してupsert
-    const { data: existing, error: findErr } = await sb
-      .from('products')
-      .select('id')
-      .eq('product_name', product_name)
-      .maybeSingle();
-
-    if (findErr) { errors++; continue; }
-
-    if (existing) {
-      const { error: updateErr } = await sb.from('products').update({
-        category: toStr(category),
-        product_code: toStr(product_code),
-        barcode: toStr(barcode),
-        gift_code: toStr(gift_code),
-        unified_code: toStr(unified_code),
-        supplier_code: toStr(supplier_code),
-        supplier_name: toStr(supplier_name),
-        stock_location: toStr(stock_location),
-        stock_ku, stock_banchi,
-        is_active: 1,
-        updated_at: jst,
-      }).eq('id', existing.id);
-      if (updateErr) { errors++; } else { updated++; }
-    } else {
-      const { error: insertErr } = await sb.from('products').insert({
-        category: toStr(category),
-        product_name,
-        product_code: toStr(product_code),
-        barcode: toStr(barcode),
-        gift_code: toStr(gift_code),
-        unified_code: toStr(unified_code),
-        supplier_code: toStr(supplier_code),
-        supplier_name: toStr(supplier_name),
-        stock_location: toStr(stock_location),
-        stock_ku, stock_banchi,
-        is_active: 1,
-        registered_at: jst,
-        updated_at: jst,
-      });
-      if (insertErr) { errors++; } else { inserted++; }
-    }
+    parsed.push({
+      product_name,
+      category:       toStr(r['カテゴリ']    || r.category       || ''),
+      unified_code:   toStr(r['統一コード']   || r.unified_code   || ''),
+      gift_code:      toStr(r['ギフトコード'] || r.gift_code      || ''),
+      product_code:   toStr(r['商品記号']    || r.product_code   || ''),
+      barcode:        toStr(r['バーコード']   || r.barcode        || ''),
+      supplier_code:  toStr(r['仕入先コード'] || r.supplier_code  || ''),
+      supplier_name:  toStr(r['仕入先名']    || r.supplier_name  || ''),
+      stock_location: toStr(r['ストック場所'] || r.stock_location || ''),
+      stock_ku:     (rawKu     !== '' && rawKu     != null) ? String(rawKu).trim()     || null : null,
+      stock_banchi: (rawBanchi !== '' && rawBanchi != null) ? String(rawBanchi).trim() || null : null,
+    });
   }
+
+  if (parsed.length === 0) {
+    return c.json({ imported: 0, inserted: 0, updated: 0, skipped, errors: 0 });
+  }
+
+  // ★ チャンク内全商品名を1回のINクエリでまとめてSELECT（N回→1回に削減）
+  const names = parsed.map(p => p.product_name);
+  const { data: existingRows, error: findErr } = await sb
+    .from('products')
+    .select('id, product_name')
+    .in('product_name', names);
+
+  if (findErr) {
+    return c.json({ imported: 0, inserted: 0, updated: 0, skipped, errors: parsed.length });
+  }
+
+  // 既存商品名→idのマップを作成
+  const existingMap = new Map<string, number>(
+    (existingRows || []).map((r: { id: number; product_name: string }) => [r.product_name, r.id])
+  );
+
+  // 新規INSERTとUPDATEに仕分け
+  const toInsert = parsed.filter(p => !existingMap.has(p.product_name));
+  const toUpdate = parsed.filter(p =>  existingMap.has(p.product_name));
+
+  // ★ 新規INSERT：複数件まとめてバルクinsert（N回→1回）
+  if (toInsert.length > 0) {
+    const { error: insertErr } = await sb.from('products').insert(
+      toInsert.map(p => ({
+        category: p.category, product_name: p.product_name,
+        product_code: p.product_code, barcode: p.barcode,
+        gift_code: p.gift_code, unified_code: p.unified_code,
+        supplier_code: p.supplier_code, supplier_name: p.supplier_name,
+        stock_location: p.stock_location,
+        stock_ku: p.stock_ku, stock_banchi: p.stock_banchi,
+        is_active: 1, registered_at: jst, updated_at: jst,
+      }))
+    );
+    if (insertErr) { errors += toInsert.length; } else { inserted = toInsert.length; }
+  }
+
+  // ★ 既存UPDATE：idを使って直列で1件ずつ更新
+  // Cloudflare Workers 無料プランのサブリクエスト上限(50回/req)を考慮し
+  // フロントは必ず5件以下のチャンクで送ること（SELECT1+UPDATE5=6回で安全）
+  for (const p of toUpdate) {
+    const id = existingMap.get(p.product_name)!;
+    const { error: updateErr } = await sb.from('products').update({
+      category: p.category, product_code: p.product_code,
+      barcode: p.barcode, gift_code: p.gift_code,
+      unified_code: p.unified_code, supplier_code: p.supplier_code,
+      supplier_name: p.supplier_name, stock_location: p.stock_location,
+      stock_ku: p.stock_ku, stock_banchi: p.stock_banchi,
+      is_active: 1, updated_at: jst,
+    }).eq('id', id);
+    if (updateErr) { errors++; } else { updated++; }
+  }
+
   return c.json({ imported: inserted + updated, inserted, updated, skipped, errors });
 });
 

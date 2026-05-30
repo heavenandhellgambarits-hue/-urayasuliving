@@ -1239,7 +1239,7 @@ async function executeImport() {
     document.getElementById('importCancelBtn').textContent = '閉じる';
     document.getElementById('importCloseBtn').disabled = false;
 
-    if (errors === 0) {
+    if (totalErrors === 0) {
       showToast(resultMsg);
     } else {
       showToast(resultMsg, 'error');
