@@ -256,6 +256,8 @@ admin.post('/products/import', async (c) => {
   const sb = getSupabase(c.env);
   let inserted = 0;
   let updated = 0;
+  let skipped = 0;
+  let errors = 0;
 
   const toStr = (v: unknown) => {
     if (v == null || v === '') return '';
@@ -268,7 +270,7 @@ admin.post('/products/import', async (c) => {
     const category      = r['カテゴリ']       || r.category       || '';
     const unified_code  = r['統一コード']      || r.unified_code   || '';
     const gift_code     = r['ギフトコード']    || r.gift_code      || '';
-    const product_name  = r['商品名']          || r.product_name   || '';
+    const product_name  = (r['商品名']         || r.product_name   || '').trim();
     const product_code  = r['商品記号']        || r.product_code   || '';
     const barcode       = r['バーコード']      || r.barcode        || '';
     const supplier_code = r['仕入先コード']    || r.supplier_code  || '';
@@ -279,17 +281,20 @@ admin.post('/products/import', async (c) => {
     const stock_ku     = (rawKu     !== '' && rawKu     != null) ? String(rawKu).trim()     || null : null;
     const stock_banchi = (rawBanchi !== '' && rawBanchi != null) ? String(rawBanchi).trim() || null : null;
 
-    if (!product_name) continue;
+    // 商品名が空の行はスキップ（カウントして返す）
+    if (!product_name) { skipped++; continue; }
 
-    // barcode or product_code で既存レコードを検索してupsert
-    const { data: existing } = await sb
+    // 商品名で既存レコードを検索してupsert
+    const { data: existing, error: findErr } = await sb
       .from('products')
       .select('id')
       .eq('product_name', product_name)
       .maybeSingle();
 
+    if (findErr) { errors++; continue; }
+
     if (existing) {
-      await sb.from('products').update({
+      const { error: updateErr } = await sb.from('products').update({
         category: toStr(category),
         product_code: toStr(product_code),
         barcode: toStr(barcode),
@@ -302,9 +307,9 @@ admin.post('/products/import', async (c) => {
         is_active: 1,
         updated_at: jst,
       }).eq('id', existing.id);
-      updated++;
+      if (updateErr) { errors++; } else { updated++; }
     } else {
-      await sb.from('products').insert({
+      const { error: insertErr } = await sb.from('products').insert({
         category: toStr(category),
         product_name,
         product_code: toStr(product_code),
@@ -319,10 +324,10 @@ admin.post('/products/import', async (c) => {
         registered_at: jst,
         updated_at: jst,
       });
-      inserted++;
+      if (insertErr) { errors++; } else { inserted++; }
     }
   }
-  return c.json({ imported: inserted + updated, inserted, updated });
+  return c.json({ imported: inserted + updated, inserted, updated, skipped, errors });
 });
 
 // ========== 発注元マスタ ==========

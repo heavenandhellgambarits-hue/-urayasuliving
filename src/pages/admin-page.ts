@@ -1154,10 +1154,19 @@ function handleImportFile(input) {
       Object.keys(r).forEach(function(k) { row[k] = r[k] != null ? String(r[k]) : ''; });
       return row;
     });
+    // 商品名が空の行をフロントでも事前にフィルタ（APIと同じ条件で件数を一致させる）
+    var totalRead = data.length;
+    data = data.filter(function(r) {
+      return ((r['商品名'] || r['product_name'] || '').trim()) !== '';
+    });
+    var skippedCount = totalRead - data.length;
     importRows = data;
     var preview = document.getElementById('importPreview');
     var col = function(r, ja, en) { return r[ja] || r[en] || ''; };
-    preview.innerHTML = '<p class="text-sm text-gray-700 mb-2">' + data.length + '件を読み込みました。</p>'
+    var skipMsg = skippedCount > 0
+      ? ' <span class="text-orange-500">（商品名なし ' + skippedCount + '行をスキップ）</span>'
+      : '';
+    preview.innerHTML = '<p class="text-sm text-gray-700 mb-2"><span class="font-bold">' + data.length + '件</span>を取り込みます。' + skipMsg + '</p>'
       + '<div class="overflow-x-auto max-h-48 border rounded"><table class="text-xs w-full"><thead class="tbl-header"><tr><th>カテゴリ</th><th>統一コード</th><th>ギフトコード</th><th>商品名</th><th>商品記号</th><th>バーコード</th></tr></thead><tbody>'
       + data.slice(0,10).map(function(r){ return '<tr><td>'+col(r,'カテゴリ','category')+'</td><td>'+col(r,'統一コード','unified_code')+'</td><td>'+col(r,'ギフトコード','gift_code')+'</td><td>'+col(r,'商品名','product_name')+'</td><td>'+col(r,'商品記号','product_code')+'</td><td>'+col(r,'バーコード','barcode')+'</td></tr>'; }).join('')
       + '</tbody></table></div>';
@@ -1183,7 +1192,7 @@ async function executeImport() {
 
   var totalInserted = 0;
   var totalUpdated  = 0;
-  var errors = 0;
+  var totalErrors   = 0;
 
   try {
     // チャンク分割して順次送信
@@ -1197,8 +1206,9 @@ async function executeImport() {
       if (res.ok) {
         totalInserted += d.inserted || 0;
         totalUpdated  += d.updated  || 0;
+        totalErrors   += d.errors   || 0;
       } else {
-        errors++;
+        totalErrors += chunk.length;
       }
       // プログレス更新
       var done = Math.min(i + IMPORT_CHUNK_SIZE, total);
@@ -1216,7 +1226,7 @@ async function executeImport() {
     } else {
       resultMsg = '取込完了（変更なし）';
     }
-    if (errors > 0) resultMsg += '（エラー: ' + errors + 'チャンク）';
+    if (totalErrors > 0) resultMsg += '（エラー: ' + totalErrors + '件）';
 
     // 完了
     document.getElementById('importProgressBar').style.width = '100%';
