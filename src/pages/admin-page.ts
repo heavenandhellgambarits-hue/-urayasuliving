@@ -1127,8 +1127,10 @@ async function exportProducts() {
 
 // ========== Excel取込 ==========
 var importRows = [];
+var importFrontSkipped = 0;  // フロントで事前にスキップした件数
 function openImportModal() {
   importRows = [];
+  importFrontSkipped = 0;
   document.getElementById('importPreview').innerHTML = '';
   document.getElementById('importBtn').classList.add('hidden');
   document.getElementById('importFile').value = '';
@@ -1160,6 +1162,7 @@ function handleImportFile(input) {
       return ((r['商品名'] || r['product_name'] || '').trim()) !== '';
     });
     var skippedCount = totalRead - data.length;
+    importFrontSkipped = skippedCount;
     importRows = data;
     var preview = document.getElementById('importPreview');
     var col = function(r, ja, en) { return r[ja] || r[en] || ''; };
@@ -1193,6 +1196,7 @@ async function executeImport() {
   var totalInserted = 0;
   var totalUpdated  = 0;
   var totalErrors   = 0;
+  var totalSkipped  = 0;
 
   try {
     // チャンク分割して順次送信
@@ -1207,6 +1211,7 @@ async function executeImport() {
         totalInserted += d.inserted || 0;
         totalUpdated  += d.updated  || 0;
         totalErrors   += d.errors   || 0;
+        totalSkipped  += d.skipped  || 0;
       } else {
         totalErrors += chunk.length;
       }
@@ -1226,6 +1231,8 @@ async function executeImport() {
     } else {
       resultMsg = '取込完了（変更なし）';
     }
+    var allSkipped = totalSkipped + importFrontSkipped;
+    if (allSkipped > 0) resultMsg += '（商品名なし ' + allSkipped + '件スキップ）';
     if (totalErrors > 0) resultMsg += '（エラー: ' + totalErrors + '件）';
 
     // 完了

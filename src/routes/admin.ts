@@ -319,20 +319,20 @@ admin.post('/products/import', async (c) => {
   const toInsert = parsed.filter(p => !existingMap.has(p.product_name));
   const toUpdate = parsed.filter(p =>  existingMap.has(p.product_name));
 
-  // ★ 新規INSERT：複数件まとめてバルクinsert（N回→1回）
-  if (toInsert.length > 0) {
-    const { error: insertErr } = await sb.from('products').insert(
-      toInsert.map(p => ({
-        category: p.category, product_name: p.product_name,
-        product_code: p.product_code, barcode: p.barcode,
-        gift_code: p.gift_code, unified_code: p.unified_code,
-        supplier_code: p.supplier_code, supplier_name: p.supplier_name,
-        stock_location: p.stock_location,
-        stock_ku: p.stock_ku, stock_banchi: p.stock_banchi,
-        is_active: 1, registered_at: jst, updated_at: jst,
-      }))
-    );
-    if (insertErr) { errors += toInsert.length; } else { inserted = toInsert.length; }
+  // ★ 新規INSERT：1件ずつ直列INSERT
+  // バルクINSERTは1件でも制約違反があると全件失敗するため、
+  // Cloudflare Workers 50サブリクエスト制限内（SELECT1 + INSERT≦4 + UPDATE≦4 = ≦9回）で安全に処理
+  for (const p of toInsert) {
+    const { error: insertErr } = await sb.from('products').insert({
+      category: p.category, product_name: p.product_name,
+      product_code: p.product_code, barcode: p.barcode,
+      gift_code: p.gift_code, unified_code: p.unified_code,
+      supplier_code: p.supplier_code, supplier_name: p.supplier_name,
+      stock_location: p.stock_location,
+      stock_ku: p.stock_ku, stock_banchi: p.stock_banchi,
+      is_active: 1, registered_at: jst, updated_at: jst,
+    });
+    if (insertErr) { errors++; } else { inserted++; }
   }
 
   // ★ 既存UPDATE：idを使って直列で1件ずつ更新
