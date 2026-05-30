@@ -1221,18 +1221,22 @@ async function executeImport() {
     }
 
     // 完了メッセージ組み立て
+    // ※既存商品名はUPDATEせずスキップ（重複登録防止）するためtotalUpdatedは常に0
     var resultMsg = '';
-    if (totalInserted > 0 && totalUpdated > 0) {
-      resultMsg = '新規追加 ' + totalInserted + '件 / 更新 ' + totalUpdated + '件';
-    } else if (totalInserted > 0) {
+    if (totalInserted > 0) {
       resultMsg = totalInserted + '件を新規追加しました';
-    } else if (totalUpdated > 0) {
-      resultMsg = totalUpdated + '件を更新しました';
     } else {
-      resultMsg = '取込完了（変更なし）';
+      resultMsg = '取込完了（新規追加なし）';
     }
-    var allSkipped = totalSkipped + importFrontSkipped;
-    if (allSkipped > 0) resultMsg += '（商品名なし ' + allSkipped + '件スキップ）';
+    // スキップ内訳: 商品名なし行 + 既存商品名（重複）
+    var skippedBlank    = importFrontSkipped;
+    var skippedDuplicate = totalSkipped;  // APIからのskipped = 既存商品名
+    if (skippedBlank > 0 || skippedDuplicate > 0) {
+      var skipParts = [];
+      if (skippedBlank > 0)    skipParts.push('商品名なし ' + skippedBlank + '件');
+      if (skippedDuplicate > 0) skipParts.push('登録済み ' + skippedDuplicate + '件');
+      resultMsg += '（スキップ: ' + skipParts.join(' / ') + '）';
+    }
     if (totalErrors > 0) resultMsg += '（エラー: ' + totalErrors + '件）';
 
     // 完了

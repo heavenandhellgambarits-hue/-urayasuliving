@@ -315,13 +315,15 @@ admin.post('/products/import', async (c) => {
     (existingRows || []).map((r: { id: number; product_name: string }) => [r.product_name, r.id])
   );
 
-  // 新規INSERTとUPDATEに仕分け
+  // 新規INSERTとスキップ（既存）に仕分け
+  // ★ 既存商品名は上書きせずスキップ（重複登録防止）
   const toInsert = parsed.filter(p => !existingMap.has(p.product_name));
-  const toUpdate = parsed.filter(p =>  existingMap.has(p.product_name));
+  const toSkip   = parsed.filter(p =>  existingMap.has(p.product_name));
+  skipped += toSkip.length;
 
   // ★ 新規INSERT：1件ずつ直列INSERT
-  // バルクINSERTは1件でも制約違反があると全件失敗するため、
-  // Cloudflare Workers 50サブリクエスト制限内（SELECT1 + INSERT≦4 + UPDATE≦4 = ≦9回）で安全に処理
+  // バルクINSERTは1件でも制約違反があると全件失敗するため個別に処理
+  // Cloudflare Workers 50サブリクエスト制限内（SELECT1 + INSERT≦4 = ≦5回）で安全
   for (const p of toInsert) {
     const { error: insertErr } = await sb.from('products').insert({
       category: p.category, product_name: p.product_name,
@@ -335,23 +337,7 @@ admin.post('/products/import', async (c) => {
     if (insertErr) { errors++; } else { inserted++; }
   }
 
-  // ★ 既存UPDATE：idを使って直列で1件ずつ更新
-  // Cloudflare Workers 無料プランのサブリクエスト上限(50回/req)を考慮し
-  // フロントは必ず5件以下のチャンクで送ること（SELECT1+UPDATE5=6回で安全）
-  for (const p of toUpdate) {
-    const id = existingMap.get(p.product_name)!;
-    const { error: updateErr } = await sb.from('products').update({
-      category: p.category, product_code: p.product_code,
-      barcode: p.barcode, gift_code: p.gift_code,
-      unified_code: p.unified_code, supplier_code: p.supplier_code,
-      supplier_name: p.supplier_name, stock_location: p.stock_location,
-      stock_ku: p.stock_ku, stock_banchi: p.stock_banchi,
-      is_active: 1, updated_at: jst,
-    }).eq('id', id);
-    if (updateErr) { errors++; } else { updated++; }
-  }
-
-  return c.json({ imported: inserted + updated, inserted, updated, skipped, errors });
+  return c.json({ imported: inserted, inserted, updated: 0, skipped, errors });
 });
 
 // ========== 発注元マスタ ==========
