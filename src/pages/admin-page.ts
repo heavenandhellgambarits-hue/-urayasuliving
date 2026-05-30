@@ -1167,7 +1167,7 @@ function handleImportFile(input) {
 }
 
 // チャンクサイズ（1回のAPIコールで送る件数）
-var IMPORT_CHUNK_SIZE = 50;
+var IMPORT_CHUNK_SIZE = 5;
 
 async function executeImport() {
   if (!importRows.length) return;
