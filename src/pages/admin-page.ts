@@ -903,14 +903,17 @@ async function printDeliverySlip(id) {
     + '<thead><tr>'
     + cols.map(function(col) {
         var wStyle = colWidth[col] ? 'width:' + colWidth[col] + ';' : '';
-        return '<th style="border:1px solid #ccc;padding:5px 8px;background-color:' + stripeColor + ';text-align:' + colAlign[col] + ';' + wStyle + '">' + colLabel[col] + '</th>';
+        // ヘッダー：下線2pxで区切り、背景なし（印刷設定不依存）
+        return '<th style="border:1px solid #999;border-bottom:2px solid #333;padding:5px 8px;text-align:' + colAlign[col] + ';' + wStyle + '">' + colLabel[col] + '</th>';
       }).join('')
     + '</tr></thead><tbody>'
     + items.map(function(it, idx) {
-        // ③ 縞々：偶数インデックスは白、奇数インデックスはテーマカラー
-        // tdに直接background-colorを指定（trの背景は印刷時に継承されない場合があるため）
-        var rowBg = (idx % 2 === 0) ? '#ffffff' : stripeColor;
-        var tdBase = 'border:1px solid #ccc;padding:4px 8px;background-color:' + rowBg + ';';
+        // ③ 縞々：印刷設定に依存しないようbackground-colorは使わず
+        // 奇数行（idx=1,3,5…）は上下ボーダーを太く・濃くして行を視覚的に区別
+        var isOdd = (idx % 2 !== 0);
+        var tdBase = isOdd
+          ? 'border-left:1px solid #ccc;border-right:1px solid #ccc;border-top:2px solid #888;border-bottom:2px solid #888;padding:4px 8px;'
+          : 'border:1px solid #ccc;padding:4px 8px;';
         var locDetail = (it.stock_ku != null && String(it.stock_ku).trim() !== '') || (it.stock_banchi != null && String(it.stock_banchi).trim() !== '')
           ? (it.stock_ku||'') + '-' + (it.stock_banchi||'')
           : '-';
