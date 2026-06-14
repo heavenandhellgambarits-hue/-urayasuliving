@@ -900,30 +900,32 @@ async function printDeliverySlip(id) {
     + '</table>'
     // 商品リストテーブル
     + '<table style="width:100%;border-collapse:collapse;font-size:9pt;">'
-    + '<thead><tr style="background:' + stripeColor + ';">'
+    + '<thead><tr>'
     + cols.map(function(col) {
         var wStyle = colWidth[col] ? 'width:' + colWidth[col] + ';' : '';
-        return '<th style="border:1px solid #ccc;padding:5px 8px;text-align:' + colAlign[col] + ';' + wStyle + '">' + colLabel[col] + '</th>';
+        return '<th style="border:1px solid #ccc;padding:5px 8px;background-color:' + stripeColor + ';text-align:' + colAlign[col] + ';' + wStyle + '">' + colLabel[col] + '</th>';
       }).join('')
     + '</tr></thead><tbody>'
     + items.map(function(it, idx) {
-        // ③ 縞々：奇数行(0始まり偶数インデックス)は白、偶数行はテーマカラー
+        // ③ 縞々：偶数インデックスは白、奇数インデックスはテーマカラー
+        // tdに直接background-colorを指定（trの背景は印刷時に継承されない場合があるため）
         var rowBg = (idx % 2 === 0) ? '#ffffff' : stripeColor;
+        var tdBase = 'border:1px solid #ccc;padding:4px 8px;background-color:' + rowBg + ';';
         var locDetail = (it.stock_ku != null && String(it.stock_ku).trim() !== '') || (it.stock_banchi != null && String(it.stock_banchi).trim() !== '')
           ? (it.stock_ku||'') + '-' + (it.stock_banchi||'')
           : '-';
         var cellMap = {
-          gift_code:      '<td style="border:1px solid #ccc;padding:4px 8px;font-family:monospace;font-weight:bold;">' + (it.gift_code||'-') + '</td>',
-          product_name:   '<td style="border:1px solid #ccc;padding:4px 8px;">' + it.product_name + '</td>',
-          product_code:   '<td style="border:1px solid #ccc;padding:4px 8px;font-family:monospace;">' + (it.product_code||'-') + '</td>',
-          barcode:        '<td style="border:1px solid #ccc;padding:4px 8px;font-family:monospace;">' + (it.barcode||'-') + '</td>',
-          supplier_name:  '<td style="border:1px solid #ccc;padding:4px 8px;">' + (it.supplier_name||'-') + '</td>',
-          stock_location: '<td style="border:1px solid #ccc;padding:4px 8px;">' + (it.stock_location||'-') + '</td>',
-          loc_detail:     '<td style="border:1px solid #ccc;padding:4px 8px;text-align:center;">' + locDetail + '</td>',
-          quantity:       '<td style="border:1px solid #ccc;padding:4px 8px;text-align:center;font-weight:bold;">' + it.quantity + '</td>',
-          check:          '<td style="border:1px solid #ccc;padding:4px 8px;"></td>'
+          gift_code:      '<td style="' + tdBase + 'font-family:monospace;font-weight:bold;">' + (it.gift_code||'-') + '</td>',
+          product_name:   '<td style="' + tdBase + '">' + it.product_name + '</td>',
+          product_code:   '<td style="' + tdBase + 'font-family:monospace;">' + (it.product_code||'-') + '</td>',
+          barcode:        '<td style="' + tdBase + 'font-family:monospace;">' + (it.barcode||'-') + '</td>',
+          supplier_name:  '<td style="' + tdBase + '">' + (it.supplier_name||'-') + '</td>',
+          stock_location: '<td style="' + tdBase + '">' + (it.stock_location||'-') + '</td>',
+          loc_detail:     '<td style="' + tdBase + 'text-align:center;">' + locDetail + '</td>',
+          quantity:       '<td style="' + tdBase + 'text-align:center;font-weight:bold;">' + it.quantity + '</td>',
+          check:          '<td style="' + tdBase + '"></td>'
         };
-        return '<tr style="background:' + rowBg + ';">'
+        return '<tr>'
           + cols.map(function(col){ return cellMap[col]; }).join('')
           + '</tr>';
       }).join('')
