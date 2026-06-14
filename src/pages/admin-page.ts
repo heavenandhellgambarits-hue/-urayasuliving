@@ -829,6 +829,46 @@ async function printDeliverySlip(id) {
   var slip = document.getElementById('deliverySlip');
   var content = document.getElementById('deliverySlipContent');
 
+  // ④ 空列判定：各列フィールドが全件空かどうかチェック
+  var hasGiftCode     = items.some(function(it){ return it.gift_code     && String(it.gift_code).trim()     !== ''; });
+  var hasProductCode  = items.some(function(it){ return it.product_code  && String(it.product_code).trim()  !== ''; });
+  var hasBarcode      = items.some(function(it){ return it.barcode       && String(it.barcode).trim()       !== ''; });
+  var hasSupplierName = items.some(function(it){ return it.supplier_name && String(it.supplier_name).trim() !== ''; });
+  var hasStockLocation= items.some(function(it){ return it.stock_location && String(it.stock_location).trim() !== ''; });
+  var hasLocDetail    = items.some(function(it){ return (it.stock_ku != null && String(it.stock_ku).trim() !== '') || (it.stock_banchi != null && String(it.stock_banchi).trim() !== ''); });
+
+  // 表示する列のリスト（常時表示の列 + 空でない列のみ）
+  var cols = [];
+  if (hasGiftCode)      cols.push('gift_code');
+  cols.push('product_name');   // 商品名は常時表示
+  if (hasProductCode)   cols.push('product_code');
+  if (hasBarcode)       cols.push('barcode');
+  if (hasSupplierName)  cols.push('supplier_name');
+  if (hasStockLocation) cols.push('stock_location');
+  if (hasLocDetail)     cols.push('loc_detail');
+  cols.push('quantity');       // 数量は常時表示
+  cols.push('check');          // ✓欄は常時表示
+
+  var colLabel = {
+    gift_code:      'ギフトコード',
+    product_name:   '商品名',
+    product_code:   '商品記号',
+    barcode:        'バーコード',
+    supplier_name:  '仕入先',
+    stock_location: 'ストック場所',
+    loc_detail:     '区-番地',
+    quantity:       '数量',
+    check:          '✓'
+  };
+  var colAlign = {
+    gift_code:'left', product_name:'left', product_code:'left', barcode:'left',
+    supplier_name:'left', stock_location:'left', loc_detail:'center', quantity:'center', check:'center'
+  };
+  var colWidth = { quantity:'50px', check:'40px' };
+
+  // テーマカラー（縞々用：#e8f0e8）
+  var stripeColor = '#e8f0e8';
+
   content.innerHTML = '<div style="width:100%;font-family:Hiragino Sans,Meiryo,sans-serif;font-size:10pt;">'
     + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">'
     + '<div><h1 style="font-size:16pt;font-weight:bold;margin:0;">納 品 書</h1>'
@@ -836,41 +876,56 @@ async function printDeliverySlip(id) {
     + '<div style="border:2px solid #333;width:140px;height:70px;padding:4px;text-align:center;font-size:9pt;">'
     + '<div style="font-weight:bold;margin-bottom:2px;">検品者サイン</div>'
     + '<div style="height:44px;"></div></div></div>'
+    // ヘッダーテーブル
     + '<table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-size:9pt;">'
-    + '<tr><td style="padding:4px 8px;border:1px solid #ccc;background:#f5f5f5;font-weight:bold;width:100px;">発注元</td>'
+    + '<tr>'
+    + '<td style="padding:4px 8px;border:1px solid #ccc;background:#f5f5f5;font-weight:bold;width:100px;">発注元</td>'
     + '<td style="padding:4px 8px;border:1px solid #ccc;">' + order.store_name + (order.section_name ? ' / ' + order.section_name : '') + '</td>'
     + '<td style="padding:4px 8px;border:1px solid #ccc;background:#f5f5f5;font-weight:bold;width:100px;">担当者</td>'
-    + '<td style="padding:4px 8px;border:1px solid #ccc;">' + (order.orderer_name||'-') + '</td></tr>'
-    + '<tr><td style="padding:4px 8px;border:1px solid #ccc;background:#f5f5f5;font-weight:bold;">納品希望日</td>'
+    + '<td style="padding:4px 8px;border:1px solid #ccc;">' + (order.orderer_name||'-') + '</td>'
+    + '</tr>'
+    + '<tr>'
+    + '<td style="padding:4px 8px;border:1px solid #ccc;background:#f5f5f5;font-weight:bold;">納品希望日</td>'
     + '<td style="padding:4px 8px;border:1px solid #ccc;">' + (order.desired_delivery_date||'-') + '</td>'
     + '<td style="padding:4px 8px;border:1px solid #ccc;background:#f5f5f5;font-weight:bold;">ステータス</td>'
-    + '<td style="padding:4px 8px;border:1px solid #ccc;">' + (statusLabel[order.status]||order.status) + '</td></tr>'
-    + (order.note ? '<tr><td style="padding:4px 8px;border:1px solid #ccc;background:#f5f5f5;font-weight:bold;">備考</td><td colspan="3" style="padding:4px 8px;border:1px solid #ccc;">' + order.note + '</td></tr>' : '')
+    + '<td style="padding:4px 8px;border:1px solid #ccc;">' + (statusLabel[order.status]||order.status) + '</td>'
+    + '</tr>'
+    // ① 備考欄：太枠(3px solid)  ② フォントカラー赤
+    + (order.note
+        ? '<tr>'
+          + '<td style="padding:4px 8px;border:3px solid #333;background:#f5f5f5;font-weight:bold;">備考</td>'
+          + '<td colspan="3" style="padding:4px 8px;border:3px solid #333;color:#cc0000;font-weight:bold;">' + order.note + '</td>'
+          + '</tr>'
+        : '')
     + '</table>'
+    // 商品リストテーブル
     + '<table style="width:100%;border-collapse:collapse;font-size:9pt;">'
-    + '<thead><tr style="background:#e8f0e8;">'
-    + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:left;">ギフトコード</th>'
-    + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:left;">商品名</th>'
-    + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:left;">商品記号</th>'
-    + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:left;">バーコード</th>'
-    + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:left;">仕入先</th>'
-    + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:left;">ストック場所</th>'
-    + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:center;">区-番地</th>'
-    + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:center;">数量</th>'
-    + '<th style="border:1px solid #ccc;padding:5px 8px;text-align:center;width:40px;">✓</th>'
+    + '<thead><tr style="background:' + stripeColor + ';">'
+    + cols.map(function(col) {
+        var wStyle = colWidth[col] ? 'width:' + colWidth[col] + ';' : '';
+        return '<th style="border:1px solid #ccc;padding:5px 8px;text-align:' + colAlign[col] + ';' + wStyle + '">' + colLabel[col] + '</th>';
+      }).join('')
     + '</tr></thead><tbody>'
-    + items.map(function(it) {
-        var locDetail = (it.stock_ku != null || it.stock_banchi != null) ? (it.stock_ku||'') + '-' + (it.stock_banchi||'') : '-';
-        return '<tr>'
-          + '<td style="border:1px solid #ccc;padding:4px 8px;font-family:monospace;font-weight:bold;">' + (it.gift_code||'-') + '</td>'
-          + '<td style="border:1px solid #ccc;padding:4px 8px;">' + it.product_name + '</td>'
-          + '<td style="border:1px solid #ccc;padding:4px 8px;font-family:monospace;">' + (it.product_code||'-') + '</td>'
-          + '<td style="border:1px solid #ccc;padding:4px 8px;font-family:monospace;">' + (it.barcode||'-') + '</td>'
-          + '<td style="border:1px solid #ccc;padding:4px 8px;">' + (it.supplier_name||'-') + '</td>'
-          + '<td style="border:1px solid #ccc;padding:4px 8px;">' + (it.stock_location||'-') + '</td>'
-          + '<td style="border:1px solid #ccc;padding:4px 8px;text-align:center;">' + locDetail + '</td>'
-          + '<td style="border:1px solid #ccc;padding:4px 8px;text-align:center;font-weight:bold;">' + it.quantity + '</td>'
-          + '<td style="border:1px solid #ccc;padding:4px 8px;"></td></tr>';
+    + items.map(function(it, idx) {
+        // ③ 縞々：奇数行(0始まり偶数インデックス)は白、偶数行はテーマカラー
+        var rowBg = (idx % 2 === 0) ? '#ffffff' : stripeColor;
+        var locDetail = (it.stock_ku != null && String(it.stock_ku).trim() !== '') || (it.stock_banchi != null && String(it.stock_banchi).trim() !== '')
+          ? (it.stock_ku||'') + '-' + (it.stock_banchi||'')
+          : '-';
+        var cellMap = {
+          gift_code:      '<td style="border:1px solid #ccc;padding:4px 8px;font-family:monospace;font-weight:bold;">' + (it.gift_code||'-') + '</td>',
+          product_name:   '<td style="border:1px solid #ccc;padding:4px 8px;">' + it.product_name + '</td>',
+          product_code:   '<td style="border:1px solid #ccc;padding:4px 8px;font-family:monospace;">' + (it.product_code||'-') + '</td>',
+          barcode:        '<td style="border:1px solid #ccc;padding:4px 8px;font-family:monospace;">' + (it.barcode||'-') + '</td>',
+          supplier_name:  '<td style="border:1px solid #ccc;padding:4px 8px;">' + (it.supplier_name||'-') + '</td>',
+          stock_location: '<td style="border:1px solid #ccc;padding:4px 8px;">' + (it.stock_location||'-') + '</td>',
+          loc_detail:     '<td style="border:1px solid #ccc;padding:4px 8px;text-align:center;">' + locDetail + '</td>',
+          quantity:       '<td style="border:1px solid #ccc;padding:4px 8px;text-align:center;font-weight:bold;">' + it.quantity + '</td>',
+          check:          '<td style="border:1px solid #ccc;padding:4px 8px;"></td>'
+        };
+        return '<tr style="background:' + rowBg + ';">'
+          + cols.map(function(col){ return cellMap[col]; }).join('')
+          + '</tr>';
       }).join('')
     + '</tbody></table></div>';
 
